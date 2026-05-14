@@ -120,4 +120,199 @@
         { id: 4, name: "בטטה", unit: "קילו", price: 8 },
         { id: 5, name: "שמן זית", unit: "ליטר", price: 45 },
         { id: 6, name: "גבינה צהובה מגורדת", unit: "קילו", price: 40 },
-        {
+        { id: 7, name: "גבינה בולגרית/פטה", unit: "קילו", price: 55 },
+        { id: 8, name: "חסה שטופה", unit: "מארז", price: 12 },
+        { id: 9, name: "פילה סלמון טרי", unit: "קילו", price: 95 },
+        { id: 10, name: "תבנית אלומיניום + מכסה", unit: "יחידה", price: 5 },
+        { id: 11, name: "שקית מיתוג ליביס", unit: "יחידה", price: 2 },
+        { id: 12, name: "קמח לבן", unit: "קילו", price: 6 }
+    ];
+
+    const fullMenu = [
+        { cat: "פסטות ומוקרמים", items: [
+            {id:101, name:"פסטה ברוטב שמנת פטריות", price:180, recipe:[]},
+            {id:102, name:"פסטה ברוטב רוזה", price:180, recipe:[]},
+            {id:103, name:"פסטה ברוטב פסטו", price:180, recipe:[]},
+            {id:104, name:"פסטה ברוטב שמנת בטטה", price:180, recipe:[]},
+            {id:105, name:"תפוח אדמה מוקרם בשמנת", price:180, recipe:[]}
+        ]},
+        { cat: "סלטים", items: [
+            {id:201, name:"סלט יווני", price:180, recipe:[]},
+            {id:202, name:"סלט כרוב", price:180, recipe:[]},
+            {id:203, name:"סלט בטטה ופלפלים", price:180, recipe:[]},
+            {id:204, name:"סלט סביח", price:180, recipe:[]},
+            {id:205, name:"סלט שרי", price:180, recipe:[]}
+        ]},
+        { cat: "קישים ופשטידות", items: [
+            {id:301, name:"24 מיני קישים מלוחים אישיים", price:200, recipe:[]},
+            {id:302, name:"20 מיני פשטידת כרובית וגבינות", price:180, recipe:[]},
+            {id:303, name:"20 מיני פשטידת בטטה וגבינות", price:160, recipe:[]},
+            {id:304, name:"20 טורטיה מטוגנת", price:180, recipe:[]},
+            {id:305, name:"24 טורטיה צלוייה", price:180, recipe:[]}
+        ]},
+        { cat: "כריכונים וקוראסונים", items: [
+            {id:401, name:"24 כריכוני ביס", price:200, recipe:[]},
+            {id:402, name:"24 כריכוני סביח", price:200, recipe:[]},
+            {id:403, name:"20 קוראסונים", price:200, recipe:[]},
+            {id:404, name:"24 מקלות שום בעשבי תיבול", price:180, recipe:[]},
+            {id:405, name:"24 פוקצ'ות", price:180, recipe:[]},
+            {id:406, name:"20 טורטיות ממולאות", price:180, recipe:[]}
+        ]},
+        { cat: "דגים", items: [
+            {id:501, name:"פילה סלומון טריקאי", price:330, recipe:[]},
+            {id:502, name:"פילה סלומון בעשבי תיבול", price:330, recipe:[]},
+            {id:503, name:"פילה סלומון בדבש וחרדל", price:330, recipe:[]},
+            {id:504, name:"25 שיפודי סלומון", price:300, recipe:[]}
+        ]},
+        { cat: "קינוחים", items: [
+            {id:601, name:"20 כוסיות מוס גבינה ופירורים", price:180, recipe:[]},
+            {id:602, name:"20 כוסיות מוס טריקולד", price:180, recipe:[]},
+            {id:603, name:"24 פחזניות ממולאות קרם וניל", price:170, recipe:[]},
+            {id:604, name:"24 סופלה שוקלד", price:170, recipe:[]}
+        ]}
+    ];
+
+    let state = JSON.parse(localStorage.getItem('libis_final_v5')) || { menu: fullMenu, bank: suggestedBank };
+    let order = {};
+
+    function showTab(id, btn) {
+        document.querySelectorAll('.container').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        btn.classList.add('active');
+        render();
+    }
+
+    function switchManageMode(mode, btn) {
+        document.getElementById('bank-view').style.display = mode === 'bank' ? 'block' : 'none';
+        document.getElementById('product-view').style.display = mode === 'products' ? 'block' : 'none';
+        document.querySelectorAll('.sub-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        render();
+    }
+
+    function render() {
+        const orderList = document.getElementById('order-form-list');
+        orderList.innerHTML = state.menu.map(c => `
+            <div class="category-block">
+                <h3>${c.cat}</h3>
+                ${c.items.map(i => `
+                    <div class="item-row">
+                        <span>${i.name} <b>(${i.price} ₪)</b></span>
+                        <input type="number" class="qty-input" placeholder="0" oninput="updateOrder(${i.id}, this.value)">
+                    </div>
+                `).join('')}
+            </div>
+        `).join('');
+
+        const bankBody = document.getElementById('bank-body');
+        bankBody.innerHTML = state.bank.map((m, idx) => `
+            <tr>
+                <td><input type="text" value="${m.name}" onchange="updateBank(${idx}, 'name', this.value)"></td>
+                <td><input type="text" value="${m.unit}" onchange="updateBank(${idx}, 'unit', this.value)"></td>
+                <td><input type="number" value="${m.price}" onchange="updateBank(${idx}, 'price', this.value)"></td>
+                <td><button onclick="delBankItem(${idx})">✖</button></td>
+            </tr>
+        `).join('');
+
+        const sidebar = document.getElementById('sidebar-products');
+        sidebar.innerHTML = state.menu.map(c => `
+            <div class="sidebar-cat">${c.cat}</div>
+            ${c.items.map(i => `
+                <div class="sidebar-item" id="side-${i.id}" onclick="openEditor(${i.id})">${i.name}</div>
+            `).join('')}
+        `).join('');
+    }
+
+    function openEditor(id) {
+        document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
+        document.getElementById('side-'+id).classList.add('active');
+        const item = state.menu.flatMap(c => c.items).find(i => i.id === id);
+        const area = document.getElementById('editor-area');
+        area.innerHTML = `
+            <h2>${item.name}</h2>
+            <p>מחיר מכירה: <input type="number" value="${item.price}" onchange="updatePrice(${id}, this.value)"> ₪</p>
+            <table width="100%">
+                <thead><tr><th>מקור</th><th>חומר</th><th>כמות</th><th>עלות</th><th></th></tr></thead>
+                <tbody id="recipe-body">
+                    ${(item.recipe || []).map((r, idx) => {
+                        const fromBank = r.bankId !== undefined;
+                        const bankMat = fromBank ? state.bank.find(b => b.id === r.bankId) : null;
+                        return `
+                        <tr>
+                            <td>${fromBank ? '🏦 בנק' : '✨ ייחודי'}</td>
+                            <td>
+                                ${fromBank ? `<b>${bankMat?.name || 'חומר נמחק'}</b>` : 
+                                `<input type="text" value="${r.name}" onchange="updateRecipe(${id}, ${idx}, 'name', this.value)">`}
+                            </td>
+                            <td><input type="number" value="${r.qty}" onchange="updateRecipe(${id}, ${idx}, 'qty', this.value)"></td>
+                            <td>${fromBank ? (bankMat?.price * r.qty || 0).toFixed(2) : 
+                                `<input type="number" value="${r.cost}" onchange="updateRecipe(${id}, ${idx}, 'cost', this.value)">`} ₪</td>
+                            <td><button onclick="delIng(${id}, ${idx})">✖</button></td>
+                        </tr>`;
+                    }).join('')}
+                </tbody>
+            </table>
+            <div style="margin-top:15px; display:flex; gap:10px;">
+                <select id="bank-select" style="flex:1;">
+                    <option value="">-- בחר חומר מהבנק --</option>
+                    ${state.bank.map(b => `<option value="${b.id}">${b.name} (${b.price} ₪)</option>`).join('')}
+                </select>
+                <button onclick="addFromBank(${id})">הוסף מהבנק</button>
+                <button onclick="addUnique(${id})" style="background:#f4f4f4; color:#333; border:1px solid #ccc;">+ חומר ייחודי</button>
+            </div>
+            <div style="margin-top:30px;"><button onclick="save()" style="background:var(--teal); color:white; padding:10px 40px; border:none; border-radius:10px; cursor:pointer;">שמור הכל</button></div>
+        `;
+    }
+
+    function updateOrder(id, qty) { order[id] = parseFloat(qty) || 0; calculate(); }
+    function calculate() {
+        let rev = 0; let cost = 0;
+        state.menu.flatMap(c => c.items).forEach(i => {
+            const q = order[i.id] || 0;
+            rev += q * i.price;
+            cost += q * (i.recipe || []).reduce((s, r) => {
+                if (r.bankId !== undefined) {
+                    const bm = state.bank.find(b => b.id === r.bankId);
+                    return s + (bm ? bm.price * r.qty : 0);
+                }
+                return s + (parseFloat(r.cost) || 0);
+            }, 0);
+        });
+        document.getElementById('ui-rev').innerText = rev + ' ₪';
+        document.getElementById('ui-cost').innerText = cost + ' ₪';
+        document.getElementById('ui-profit').innerText = (rev - cost) + ' ₪';
+    }
+
+    function save() { localStorage.setItem('libis_final_v5', JSON.stringify(state)); alert("נשמר!"); calculate(); }
+    
+    function updateBank(i, f, v) { state.bank[i][f] = f === 'price' ? parseFloat(v) : v; calculate(); }
+    function addBankItem() { state.bank.push({id: Date.now(), name: "חומר חדש", unit: "יחידה", price: 0}); render(); }
+    function delBankItem(i) { state.bank.splice(i,1); render(); }
+
+    function addFromBank(id) {
+        const bid = parseInt(document.getElementById('bank-select').value);
+        if(!bid) return;
+        state.menu.flatMap(c => c.items).find(i => i.id === id).recipe.push({bankId: bid, qty: 1});
+        openEditor(id);
+    }
+    function addUnique(id) {
+        state.menu.flatMap(c => c.items).find(i => i.id === id).recipe.push({name: '', qty: 1, cost: 0});
+        openEditor(id);
+    }
+
+    function updatePrice(id, v) { state.menu.flatMap(c => c.items).find(i => i.id === id).price = parseFloat(v); }
+    function delIng(id, idx) { state.menu.flatMap(c => c.items).find(i => i.id === id).recipe.splice(idx,1); openEditor(id); }
+    function updateRecipe(id, idx, field, v) { state.menu.flatMap(c => c.items).find(i => i.id === id).recipe[idx][field] = field==='qty'||field==='cost'?parseFloat(v):v; }
+
+    function exportPDF() {
+        const profitBox = document.getElementById('profit-box');
+        if (!document.getElementById('pdf-profit-check').checked) profitBox.style.display = 'none';
+        const opt = { margin: 10, filename: `הזמנה_ליביס_${document.getElementById('cust-name').value}.pdf`, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
+        html2pdf().from(document.getElementById('pdf-area')).set(opt).save().then(() => profitBox.style.display = 'block');
+    }
+
+    window.onload = render;
+</script>
+</body>
+</html>
