@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ליביס – מערכת ניהול והזמנות</title>
+    <title>ליביס – מערכת ניהול ייצור ועלויות</title>
     <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -13,191 +13,256 @@
             --bg-cream: #fdfaf2;
             --white: #ffffff;
             --shadow: 0 10px 30px rgba(0, 130, 145, 0.1);
+            --danger: #e74c3c;
         }
 
-        body {
-            font-family: 'Heebo', sans-serif;
-            background-color: var(--bg-cream);
-            margin: 0; padding: 0;
-            display: flex; flex-direction: column; align-items: center;
-        }
-
-        .header {
-            text-align: center; background: var(--brand-teal);
-            padding: 30px; width: 100%; box-shadow: var(--shadow);
-            border-bottom: 4px solid var(--brand-gold); color: white;
-        }
+        body { font-family: 'Heebo', sans-serif; background-color: var(--bg-cream); margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; }
+        .header { text-align: center; background: var(--brand-teal); padding: 25px; width: 100%; box-shadow: var(--shadow); border-bottom: 4px solid var(--brand-gold); color: white; }
+        .header img { height: 100px; width: auto; margin-bottom: 8px; }
         
-        .header img { height: 120px; width: auto; margin-bottom: 10px; }
-        .subtitle { font-size: 16px; letter-spacing: 2px; font-weight: 300; }
-
-        .nav-tabs {
-            display: flex; gap: 10px; margin: 20px 0;
-            width: 90%; max-width: 900px;
-        }
-        .tab-btn {
-            flex: 1; padding: 15px; border: none; background: #e0e0e0;
-            border-radius: 15px; cursor: pointer; font-weight: bold; font-size: 16px;
-            transition: 0.3s; font-family: 'Heebo';
-        }
+        .nav-tabs { display: flex; gap: 10px; margin: 20px 0; width: 95%; max-width: 1000px; }
+        .tab-btn { flex: 1; padding: 15px; border: none; background: #ddd; border-radius: 12px; cursor: pointer; font-weight: bold; transition: 0.3s; font-family: 'Heebo'; }
         .tab-btn.active { background: var(--brand-teal); color: white; }
 
-        .content-section { display: none; width: 90%; max-width: 900px; }
+        .content-section { display: none; width: 95%; max-width: 1000px; margin-bottom: 100px; }
         .content-section.active { display: block; }
 
-        /* אקורדיונים לעדכון עלויות */
-        details {
-            background: white; margin-bottom: 10px; border-radius: 12px;
-            box-shadow: var(--shadow); overflow: hidden; border: 1px solid var(--brand-gold-light);
-        }
-        summary {
-            padding: 15px; font-weight: bold; cursor: pointer;
-            background: var(--brand-gold-light); color: var(--brand-teal);
-            list-style: none; display: flex; justify-content: space-between;
-        }
-        .table-container { padding: 15px; }
-        table { width: 100%; border-collapse: collapse; }
-        th { text-align: right; padding: 10px; color: var(--brand-teal); border-bottom: 2px solid var(--brand-teal); }
-        td { padding: 10px; border-bottom: 1px solid #eee; }
-        input { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 8px; }
+        .card { background: white; padding: 20px; border-radius: 20px; box-shadow: var(--shadow); margin-bottom: 20px; border: 1px solid var(--brand-gold-light); }
+        h2 { color: var(--brand-teal); border-bottom: 2px solid var(--brand-gold-light); padding-bottom: 10px; }
 
-        /* טופס הזמנה */
-        .order-card { background: white; padding: 20px; border-radius: 20px; box-shadow: var(--shadow); margin-bottom: 20px; }
-        .order-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
-        .qty-controls { display: flex; align-items: center; gap: 15px; }
-        .qty-btn { width: 32px; height: 32px; border-radius: 50%; border: none; background: var(--brand-teal); color: white; cursor: pointer; font-size: 18px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { text-align: right; padding: 12px; background: var(--brand-gold-light); color: var(--brand-teal); }
+        td { padding: 10px; border-bottom: 1px solid #f0f0f0; }
 
-        .summary-box {
-            position: sticky; bottom: 20px; background: var(--brand-teal);
-            color: white; padding: 20px; border-radius: 25px;
-            display: flex; justify-content: space-between; align-items: center;
-            width: 90%; max-width: 900px; margin-top: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-        }
-        .total-price { font-size: 28px; font-weight: 900; color: var(--brand-gold); }
+        input, select { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 8px; font-family: 'Heebo'; }
+        .btn-small { padding: 5px 10px; border-radius: 5px; border: none; cursor: pointer; font-size: 12px; }
+        .btn-add { background: var(--brand-teal); color: white; margin-top: 10px; padding: 10px 20px; border-radius: 10px; border: none; cursor: pointer; }
+        .btn-del { background: var(--danger); color: white; }
 
-        @media print { .nav-tabs, .qty-btn, .header { display: none; } .content-section { display: block !important; } }
+        /* אקורדיון מוצרים */
+        .product-recipe-box { background: #f9f9f9; padding: 15px; border-radius: 12px; margin-top: 10px; border-right: 4px solid var(--brand-gold); }
+        .profit-badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+        .profit-good { background: #d4edda; color: #155724; }
+        .profit-bad { background: #f8d7da; color: #721c24; }
+
+        .summary-box { position: fixed; bottom: 0; width: 100%; background: var(--brand-teal); color: white; padding: 15px; display: flex; justify-content: space-around; align-items: center; box-shadow: 0 -5px 20px rgba(0,0,0,0.2); z-index: 100; }
+        .total-val { font-size: 24px; font-weight: 900; color: var(--brand-gold); }
+
+        @media print { .nav-tabs, .btn-add, .summary-box, .btn-del { display: none !important; } }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <img src="libis-logo.png" alt="לוגו ליביס">
-        <div class="subtitle">קייטרינג חלבי בוטיק - מערכת ניהול</div>
+        <img src="libis-logo.png" alt="ליביס">
+        <div class="subtitle">ניהול עלויות ייצור וקייטרינג</div>
     </div>
 
     <div class="nav-tabs">
-        <button class="tab-btn active" onclick="showSection('update-costs', this)">עדכון עלויות</button>
-        <button class="tab-btn" onclick="showSection('order-form', this)">טופס הזמנה</button>
+        <button class="tab-btn active" onclick="showSection('raw-materials', this)">1. חומרי גלם</button>
+        <button class="tab-btn" onclick="showSection('products-recipes', this)">2. פירוט עלויות מנות</button>
+        <button class="tab-btn" onclick="showSection('orders', this)">3. טופס הזמנה</button>
     </div>
 
-    <div id="update-costs" class="content-section active">
-        <div id="settings-accordion"></div>
+    <div id="raw-materials" class="content-section active">
+        <div class="card">
+            <h2>ניהול מחיר חומרי גלם (בסיס)</h2>
+            <p>הגדר כאן את מחיר הקנייה של חומרי הגלם שלך (למשל: מחיר לקילו או ליחידה).</p>
+            <table id="materialsTable">
+                <thead>
+                    <tr><th>שם החומר</th><th>יחידת מידה</th><th>מחיר קנייה (₪)</th><th></th></tr>
+                </thead>
+                <tbody id="materialsBody"></tbody>
+            </table>
+            <button class="btn-add" onclick="addRawMaterial()">+ הוסף חומר גלם</button>
+        </div>
     </div>
 
-    <div id="order-form" class="content-section">
-        <div id="order-container"></div>
+    <div id="products-recipes" class="content-section">
+        <div id="recipesContainer"></div>
+    </div>
+
+    <div id="orders" class="content-section">
+        <div id="orderContainer"></div>
     </div>
 
     <div class="summary-box">
-        <div>
-            <strong>סה"כ הזמנה:</strong>
-            <div class="total-price" id="grand-total">0 ₪</div>
-        </div>
-        <button onclick="window.print()" style="background: var(--brand-gold); border: none; color: white; padding: 12px 25px; border-radius: 12px; cursor: pointer; font-weight: bold;">הדפס הזמנה</button>
+        <div>סה"כ הזמנה: <span class="total-val" id="grandTotal">0 ₪</span></div>
+        <button onclick="window.print()" style="background:var(--brand-gold); color:white; border:none; padding:10px 20px; border-radius:10px; cursor:pointer; font-weight:bold;">הדפסת הזמנה</button>
     </div>
 
     <script>
-        const defaultMenu = [
-            { category: "פסטות ומוקרמים", items: [
-                { id: 1, name: "פסטה ברוטב שמנת פטריות", price: 180 },
-                { id: 2, name: "פסטה ברוטב רוזה", price: 180 },
-                { id: 3, name: "פסטה ברוטב פסטו", price: 180 },
-                { id: 4, name: "תפוח אדמה מוקרם בשמנת", price: 180 }
-            ]},
-            { category: "סלטים", items: [
-                { id: 5, name: "סלט יווני עשיר", price: 180 },
-                { id: 6, name: "סלט כרוב ופיצוחים", price: 180 },
-                { id: 7, name: "סלט בטטה ופלפלים", price: 180 },
-                { id: 8, name: "סלט שרי פסטו", price: 180 }
-            ]},
-            { category: "קישים ופשטידות", items: [
-                { id: 9, name: "24 מיני קישים מלוחים", price: 200 },
-                { id: 10, name: "20 מיני פשטידת כרובית", price: 180 },
-                { id: 11, name: "20 מיני פשטידת בטטה", price: 160 }
-            ]}
+        // נתונים ראשוניים
+        let rawMaterials = JSON.parse(localStorage.getItem('libis_raw')) || [
+            { id: 1, name: "פסטה יבשה", unit: "קילו", price: 15 },
+            { id: 2, name: "שמנת לבישול", unit: "ליטר", price: 22 },
+            { id: 3, name: "גבינה צהובה", unit: "קילו", price: 45 },
+            { id: 4, name: "תבנית אלומיניום", unit: "יחידה", price: 2 }
         ];
 
-        let menuData = JSON.parse(localStorage.getItem('libis_menu')) || defaultMenu;
-        let order = {};
+        let menu = JSON.parse(localStorage.getItem('libis_menu_full')) || [
+            { id: 101, name: "פסטה ברוטב שמנת פטריות", category: "פסטות", sellPrice: 180, recipe: [{matId: 1, qty: 1}, {matId: 2, qty: 0.5}, {matId: 4, qty: 1}] },
+            { id: 102, name: "סלט יווני עשיר", category: "סלטים", sellPrice: 180, recipe: [{matId: 4, qty: 1}] }
+        ];
+
+        let currentOrder = {};
 
         function showSection(id, btn) {
             document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.getElementById(id).classList.add('active');
             btn.classList.add('active');
+            renderAll();
         }
 
-        function renderSettings() {
-            const container = document.getElementById('settings-accordion');
-            container.innerHTML = menuData.map((cat, cIdx) => `
-                <details>
-                    <summary>${cat.category}</summary>
-                    <div class="table-container">
-                        <table>
-                            ${cat.items.map((item, iIdx) => `
-                                <tr>
-                                    <td><input type="text" value="${item.name}" onchange="updateItem(${cIdx}, ${iIdx}, 'name', this.value)"></td>
-                                    <td><input type="number" value="${item.price}" onchange="updateItem(${cIdx}, ${iIdx}, 'price', this.value)"> ₪</td>
-                                </tr>
-                            `).join('')}
-                        </table>
-                    </div>
-                </details>
+        // --- חומרי גלם ---
+        function renderMaterials() {
+            const body = document.getElementById('materialsBody');
+            body.innerHTML = rawMaterials.map((m, idx) => `
+                <tr>
+                    <td><input type="text" value="${m.name}" onchange="updateRaw(${idx}, 'name', this.value)"></td>
+                    <td><input type="text" value="${m.unit}" onchange="updateRaw(${idx}, 'unit', this.value)"></td>
+                    <td><input type="number" value="${m.price}" onchange="updateRaw(${idx}, 'price', this.value)"></td>
+                    <td><button class="btn-small btn-del" onclick="deleteRaw(${idx})">✖</button></td>
+                </tr>
             `).join('');
         }
 
-        function renderOrder() {
-            const container = document.getElementById('order-container');
-            container.innerHTML = menuData.map(cat => `
-                <div class="order-card">
-                    <h3>${cat.category}</h3>
-                    ${cat.items.map(item => `
-                        <div class="order-row">
-                            <span>${item.name} <small>(${item.price} ₪)</small></span>
-                            <div class="qty-controls">
-                                <button class="qty-btn" onclick="updateQty(${item.id}, -1)">-</button>
-                                <strong id="qty-${item.id}">${order[item.id] || 0}</strong>
-                                <button class="qty-btn" onclick="updateQty(${item.id}, 1)">+</button>
+        function updateRaw(idx, field, val) {
+            rawMaterials[idx][field] = field === 'price' ? parseFloat(val) : val;
+            save();
+        }
+
+        function addRawMaterial() {
+            rawMaterials.push({ id: Date.now(), name: "חומר חדש", unit: "יחידה", price: 0 });
+            save();
+            renderMaterials();
+        }
+
+        function deleteRaw(idx) {
+            rawMaterials.splice(idx, 1);
+            save();
+            renderMaterials();
+        }
+
+        // --- מתכונים ומוצרים ---
+        function renderRecipes() {
+            const container = document.getElementById('recipesContainer');
+            container.innerHTML = '<h2>פירוט עלויות לפי מנה</h2>';
+            
+            menu.forEach((item, itemIdx) => {
+                let cost = 0;
+                item.recipe.forEach(r => {
+                    const mat = rawMaterials.find(m => m.id == r.matId);
+                    if (mat) cost += mat.price * r.qty;
+                });
+                const profit = item.sellPrice - cost;
+                const profitPct = ((profit / item.sellPrice) * 100).toFixed(0);
+
+                container.innerHTML += `
+                    <div class="card">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <strong>${item.name}</strong>
+                            <span>מחיר מכירה: <input type="number" style="width:80px" value="${item.sellPrice}" onchange="updateMenu(${itemIdx}, 'sellPrice', this.value)"> ₪</span>
+                        </div>
+                        <div class="product-recipe-box">
+                            <small>מרכיבי המנה ועלויות ייצור:</small>
+                            <table>
+                                ${item.recipe.map((r, rIdx) => {
+                                    const mat = rawMaterials.find(m => m.id == r.matId);
+                                    return `
+                                    <tr>
+                                        <td>
+                                            <select onchange="updateRecipe(${itemIdx}, ${rIdx}, 'matId', this.value)">
+                                                ${rawMaterials.map(m => `<option value="${m.id}" ${m.id == r.matId ? 'selected' : ''}>${m.name}</option>`).join('')}
+                                            </select>
+                                        </td>
+                                        <td><input type="number" value="${r.qty}" onchange="updateRecipe(${itemIdx}, ${rIdx}, 'qty', this.value)"></td>
+                                        <td>${mat ? (mat.price * r.qty).toFixed(2) : 0} ₪</td>
+                                        <td><button class="btn-small btn-del" onclick="deleteRecipeRow(${itemIdx}, ${rIdx})">✖</button></td>
+                                    </tr>`;
+                                }).join('')}
+                            </table>
+                            <button class="btn-small btn-add" onclick="addRecipeRow(${itemIdx})">+ הוסף מרכיב</button>
+                            <div style="margin-top:15px; border-top:1px solid #ddd; padding-top:10px;">
+                                <strong>עלות חומרים: ${cost.toFixed(2)} ₪</strong> | 
+                                <span class="profit-badge ${profitPct > 50 ? 'profit-good' : 'profit-bad'}">רווח גולמי: ${profitPct}%</span>
                             </div>
                         </div>
-                    `).join('')}
-                </div>
-            `).join('');
+                    </div>
+                `;
+            });
         }
 
-        function updateItem(cIdx, iIdx, field, val) {
-            menuData[cIdx].items[iIdx][field] = field === 'price' ? parseFloat(val) : val;
-            localStorage.setItem('libis_menu', JSON.stringify(menuData));
-            renderOrder();
-            calculateTotal();
+        function updateMenu(idx, field, val) {
+            menu[idx][field] = parseFloat(val);
+            save();
+            renderRecipes();
         }
 
-        function updateQty(id, delta) {
-            order[id] = Math.max(0, (order[id] || 0) + delta);
-            document.getElementById(`qty-${id}`).innerText = order[id];
-            calculateTotal();
+        function updateRecipe(itemIdx, rIdx, field, val) {
+            menu[itemIdx].recipe[rIdx][field] = parseFloat(val);
+            save();
+            renderRecipes();
         }
 
-        function calculateTotal() {
+        function addRecipeRow(itemIdx) {
+            menu[itemIdx].recipe.push({ matId: rawMaterials[0].id, qty: 0 });
+            save();
+            renderRecipes();
+        }
+
+        function deleteRecipeRow(itemIdx, rIdx) {
+            menu[itemIdx].recipe.splice(rIdx, 1);
+            save();
+            renderRecipes();
+        }
+
+        // --- טופס הזמנה ---
+        function renderOrders() {
+            const container = document.getElementById('orderContainer');
+            container.innerHTML = '<h2>טופס הזמנה חדשה</h2>';
+            menu.forEach(item => {
+                const qty = currentOrder[item.id] || 0;
+                container.innerHTML += `
+                    <div class="card" style="display:flex; justify-content:space-between; align-items:center; padding:15px;">
+                        <span>${item.name} (${item.sellPrice} ₪)</span>
+                        <div style="display:flex; align-items:center; gap:15px;">
+                            <button class="btn-small" style="background:#eee" onclick="updateOrderQty(${item.id}, -1)">-</button>
+                            <strong>${qty}</strong>
+                            <button class="btn-small" style="background:#eee" onclick="updateOrderQty(${item.id}, 1)">+</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function updateOrderQty(id, delta) {
+            currentOrder[id] = Math.max(0, (currentOrder[id] || 0) + delta);
+            renderOrders();
+            calcGrandTotal();
+        }
+
+        function calcGrandTotal() {
             let total = 0;
-            menuData.forEach(cat => cat.items.forEach(item => {
-                if (order[item.id]) total += order[item.id] * item.price;
-            }));
-            document.getElementById('grand-total').innerText = total + ' ₪';
+            menu.forEach(item => {
+                if (currentOrder[item.id]) total += currentOrder[item.id] * item.sellPrice;
+            });
+            document.getElementById('grandTotal').innerText = total + ' ₪';
         }
 
-        renderSettings();
-        renderOrder();
+        function save() {
+            localStorage.setItem('libis_raw', JSON.stringify(rawMaterials));
+            localStorage.setItem('libis_menu_full', JSON.stringify(menu));
+        }
+
+        function renderAll() {
+            renderMaterials();
+            renderRecipes();
+            renderOrders();
+        }
+
+        window.onload = renderAll;
     </script>
 </body>
 </html>
