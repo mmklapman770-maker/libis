@@ -3,224 +3,201 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ליביס – ניהול עלויות בוטיק</title>
+    <title>ליביס – מערכת ניהול והזמנות</title>
     <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap" rel="stylesheet">
     <style>
         :root {
-            --brand-teal: #008291; /* הטורקיז מהלוגו */
-            --brand-gold: #c8941a; /* הזהב מהלוגו */
+            --brand-teal: #008291;
+            --brand-gold: #c8941a;
             --brand-gold-light: #fdf5e0;
-            --bg-cream: #fdfaf2; /* רקע שמנת מהתפריט */
+            --bg-cream: #fdfaf2;
             --white: #ffffff;
-            --text-dark: #1a1a1a;
             --shadow: 0 10px 30px rgba(0, 130, 145, 0.1);
         }
 
         body {
             font-family: 'Heebo', sans-serif;
             background-color: var(--bg-cream);
-            color: var(--text-dark);
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            margin: 0; padding: 0;
+            display: flex; flex-direction: column; align-items: center;
         }
 
-        /* עיצוב הלוגו בראש העמוד */
         .header {
-            text-align: center;
-            margin-bottom: 40px;
-            background: var(--brand-teal);
-            padding: 30px;
-            border-radius: 0 0 50px 50px;
-            width: 100%;
-            max-width: 800px;
-            box-shadow: var(--shadow);
-            border-bottom: 4px solid var(--brand-gold);
+            text-align: center; background: var(--brand-teal);
+            padding: 30px; width: 100%; box-shadow: var(--shadow);
+            border-bottom: 4px solid var(--brand-gold); color: white;
         }
+        
+        .header img { height: 120px; width: auto; margin-bottom: 10px; }
+        .subtitle { font-size: 16px; letter-spacing: 2px; font-weight: 300; }
 
-        .logo-text {
-            color: var(--brand-gold);
-            font-size: 50px;
-            font-weight: 900;
-            margin: 0;
-            line-height: 1;
+        .nav-tabs {
+            display: flex; gap: 10px; margin: 20px 0;
+            width: 90%; max-width: 900px;
         }
-
-        .subtitle {
-            color: white;
-            font-size: 18px;
-            margin-top: 5px;
-            letter-spacing: 2px;
+        .tab-btn {
+            flex: 1; padding: 15px; border: none; background: #e0e0e0;
+            border-radius: 15px; cursor: pointer; font-weight: bold; font-size: 16px;
+            transition: 0.3s; font-family: 'Heebo';
         }
+        .tab-btn.active { background: var(--brand-teal); color: white; }
 
-        .container {
-            width: 100%;
-            max-width: 900px;
-            background: var(--white);
-            padding: 30px;
-            border-radius: 30px;
-            box-shadow: var(--shadow);
-            border: 1px solid rgba(0, 130, 145, 0.1);
-            margin-bottom: 30px;
+        .content-section { display: none; width: 90%; max-width: 900px; }
+        .content-section.active { display: block; }
+
+        /* אקורדיונים לעדכון עלויות */
+        details {
+            background: white; margin-bottom: 10px; border-radius: 12px;
+            box-shadow: var(--shadow); overflow: hidden; border: 1px solid var(--brand-gold-light);
         }
-
-        h2 {
-            color: var(--brand-teal);
-            border-bottom: 2px solid var(--brand-gold-light);
-            padding-bottom: 10px;
-            margin-top: 0;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+        summary {
+            padding: 15px; font-weight: bold; cursor: pointer;
+            background: var(--brand-gold-light); color: var(--brand-teal);
+            list-style: none; display: flex; justify-content: space-between;
         }
+        .table-container { padding: 15px; }
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: right; padding: 10px; color: var(--brand-teal); border-bottom: 2px solid var(--brand-teal); }
+        td { padding: 10px; border-bottom: 1px solid #eee; }
+        input { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 8px; }
 
-        h2::before {
-            content: '✿';
-            color: var(--brand-gold);
+        /* טופס הזמנה */
+        .order-card { background: white; padding: 20px; border-radius: 20px; box-shadow: var(--shadow); margin-bottom: 20px; }
+        .order-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
+        .qty-controls { display: flex; align-items: center; gap: 15px; }
+        .qty-btn { width: 32px; height: 32px; border-radius: 50%; border: none; background: var(--brand-teal); color: white; cursor: pointer; font-size: 18px; }
+
+        .summary-box {
+            position: sticky; bottom: 20px; background: var(--brand-teal);
+            color: white; padding: 20px; border-radius: 25px;
+            display: flex; justify-content: space-between; align-items: center;
+            width: 90%; max-width: 900px; margin-top: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.2);
         }
+        .total-price { font-size: 28px; font-weight: 900; color: var(--brand-gold); }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-
-        th {
-            background-color: var(--brand-teal);
-            color: white;
-            padding: 12px;
-            text-align: right;
-            border-radius: 0;
-        }
-
-        th:first-child { border-radius: 0 15px 0 0; }
-        th:last-child { border-radius: 15px 0 0 0; }
-
-        td {
-            padding: 12px;
-            border-bottom: 1px solid var(--brand-gold-light);
-        }
-
-        input {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 10px;
-            font-family: 'Heebo';
-            font-size: 16px;
-            transition: 0.3s;
-        }
-
-        input:focus {
-            outline: none;
-            border-color: var(--brand-gold);
-            background-color: var(--brand-gold-light);
-        }
-
-        .row-total {
-            background-color: var(--brand-gold-light);
-            font-weight: bold;
-            color: var(--brand-teal);
-        }
-
-        .save-status {
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            background: var(--brand-teal);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 50px;
-            font-size: 14px;
-            display: none;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
-
-        .add-btn {
-            background: var(--brand-gold);
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 12px;
-            cursor: pointer;
-            font-weight: bold;
-            margin-top: 15px;
-            transition: 0.3s;
-        }
-
-        .add-btn:hover {
-            background: var(--brand-teal);
-        }
-
-        .summary-card {
-            background: var(--brand-teal);
-            color: white;
-            padding: 20px;
-            border-radius: 20px;
-            margin-top: 20px;
-            display: flex;
-            justify-content: space-around;
-            text-align: center;
-        }
-
-        .summary-item span {
-            display: block;
-            font-size: 24px;
-            font-weight: 900;
-            color: var(--brand-gold);
-        }
-
-        /* איור קטן בצד לעיצוב */
-        .floral-deco {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            opacity: 0.1;
-            pointer-events: none;
-        }
+        @media print { .nav-tabs, .qty-btn, .header { display: none; } .content-section { display: block !important; } }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h1 class="logo-text">ליביס</h1>
-        <div class="subtitle">קייטרינג חלבי בוטיק</div>
+        <img src="libis-logo.png" alt="לוגו ליביס">
+        <div class="subtitle">קייטרינג חלבי בוטיק - מערכת ניהול</div>
     </div>
 
-    <div class="container">
-        <h2>עדכון עלויות חומרי גלם</h2>
-        <p>הגדר כאן את מחירי הבסיס של החומרים שלך. המידע נשמר אוטומטית.</p>
-        <table id="materialsTable">
-            <thead>
-                <tr>
-                    <th>שם החומר</th>
-                    <th>מחיר ליחידה (₪)</th>
-                    <th>פעולה</th>
-                </tr>
-            </thead>
-            <tbody id="materialsBody">
-                </tbody>
-        </table>
-        <button class="add-btn" onclick="addMaterial()">+ הוסף חומר גלם</button>
+    <div class="nav-tabs">
+        <button class="tab-btn active" onclick="showSection('update-costs', this)">עדכון עלויות</button>
+        <button class="tab-btn" onclick="showSection('order-form', this)">טופס הזמנה</button>
     </div>
 
-    <div class="container">
-        <h2>חישוב עלות מוצר סופי</h2>
-        <table id="calculatorTable">
-            <thead>
-                <tr>
-                    <th>חומר גלם</th>
-                    <th>כמות בשימוש</th>
-                    <th>עלות יחסית</th>
-                </tr>
-            </thead>
-            <tbody id="calculatorBody">
-                </tbody>
-        </table>
-        
-        <div class="summary-card">
-            <div class="summary-item">
-                סה"כ עלות ייצור
-                <span id="totalProductionCost">0
+    <div id="update-costs" class="content-section active">
+        <div id="settings-accordion"></div>
+    </div>
+
+    <div id="order-form" class="content-section">
+        <div id="order-container"></div>
+    </div>
+
+    <div class="summary-box">
+        <div>
+            <strong>סה"כ הזמנה:</strong>
+            <div class="total-price" id="grand-total">0 ₪</div>
+        </div>
+        <button onclick="window.print()" style="background: var(--brand-gold); border: none; color: white; padding: 12px 25px; border-radius: 12px; cursor: pointer; font-weight: bold;">הדפס הזמנה</button>
+    </div>
+
+    <script>
+        const defaultMenu = [
+            { category: "פסטות ומוקרמים", items: [
+                { id: 1, name: "פסטה ברוטב שמנת פטריות", price: 180 },
+                { id: 2, name: "פסטה ברוטב רוזה", price: 180 },
+                { id: 3, name: "פסטה ברוטב פסטו", price: 180 },
+                { id: 4, name: "תפוח אדמה מוקרם בשמנת", price: 180 }
+            ]},
+            { category: "סלטים", items: [
+                { id: 5, name: "סלט יווני עשיר", price: 180 },
+                { id: 6, name: "סלט כרוב ופיצוחים", price: 180 },
+                { id: 7, name: "סלט בטטה ופלפלים", price: 180 },
+                { id: 8, name: "סלט שרי פסטו", price: 180 }
+            ]},
+            { category: "קישים ופשטידות", items: [
+                { id: 9, name: "24 מיני קישים מלוחים", price: 200 },
+                { id: 10, name: "20 מיני פשטידת כרובית", price: 180 },
+                { id: 11, name: "20 מיני פשטידת בטטה", price: 160 }
+            ]}
+        ];
+
+        let menuData = JSON.parse(localStorage.getItem('libis_menu')) || defaultMenu;
+        let order = {};
+
+        function showSection(id, btn) {
+            document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            btn.classList.add('active');
+        }
+
+        function renderSettings() {
+            const container = document.getElementById('settings-accordion');
+            container.innerHTML = menuData.map((cat, cIdx) => `
+                <details>
+                    <summary>${cat.category}</summary>
+                    <div class="table-container">
+                        <table>
+                            ${cat.items.map((item, iIdx) => `
+                                <tr>
+                                    <td><input type="text" value="${item.name}" onchange="updateItem(${cIdx}, ${iIdx}, 'name', this.value)"></td>
+                                    <td><input type="number" value="${item.price}" onchange="updateItem(${cIdx}, ${iIdx}, 'price', this.value)"> ₪</td>
+                                </tr>
+                            `).join('')}
+                        </table>
+                    </div>
+                </details>
+            `).join('');
+        }
+
+        function renderOrder() {
+            const container = document.getElementById('order-container');
+            container.innerHTML = menuData.map(cat => `
+                <div class="order-card">
+                    <h3>${cat.category}</h3>
+                    ${cat.items.map(item => `
+                        <div class="order-row">
+                            <span>${item.name} <small>(${item.price} ₪)</small></span>
+                            <div class="qty-controls">
+                                <button class="qty-btn" onclick="updateQty(${item.id}, -1)">-</button>
+                                <strong id="qty-${item.id}">${order[item.id] || 0}</strong>
+                                <button class="qty-btn" onclick="updateQty(${item.id}, 1)">+</button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `).join('');
+        }
+
+        function updateItem(cIdx, iIdx, field, val) {
+            menuData[cIdx].items[iIdx][field] = field === 'price' ? parseFloat(val) : val;
+            localStorage.setItem('libis_menu', JSON.stringify(menuData));
+            renderOrder();
+            calculateTotal();
+        }
+
+        function updateQty(id, delta) {
+            order[id] = Math.max(0, (order[id] || 0) + delta);
+            document.getElementById(`qty-${id}`).innerText = order[id];
+            calculateTotal();
+        }
+
+        function calculateTotal() {
+            let total = 0;
+            menuData.forEach(cat => cat.items.forEach(item => {
+                if (order[item.id]) total += order[item.id] * item.price;
+            }));
+            document.getElementById('grand-total').innerText = total + ' ₪';
+        }
+
+        renderSettings();
+        renderOrder();
+    </script>
+</body>
+</html>
