@@ -3,140 +3,130 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ליביס – מערכת ניהול פרימיום v7</title>
+    <title>ליביס – מערכת ניהול פרימיום</title>
     <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         :root { --teal: #008291; --gold: #c8941a; --gold-l: #fdf5e0; --bg: #fdfaf2; --white: #ffffff; }
         body { font-family: 'Heebo', sans-serif; background-color: var(--bg); margin: 0; color: #333; }
         
-        /* Header & Navigation */
+        /* Header & Nav */
         .header { text-align: center; background: var(--teal); padding: 15px; border-bottom: 4px solid var(--gold); }
         .header img { height: 75px; }
         .nav-main { display: flex; justify-content: center; gap: 15px; padding: 15px; background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000; }
-        .nav-btn { padding: 10px 30px; border: none; border-radius: 50px; cursor: pointer; font-weight: bold; font-family: 'Heebo'; background: #eee; transition: 0.3s; }
+        .nav-btn { padding: 10px 30px; border: none; border-radius: 50px; cursor: pointer; font-weight: bold; background: #eee; transition: 0.3s; font-family: 'Heebo'; }
         .nav-btn.active { background: var(--teal); color: white; }
 
         .container { max-width: 1200px; margin: 20px auto; padding: 0 20px 150px 20px; display: none; }
         .container.active { display: block; }
 
-        /* Order Info */
-        .order-head-grid { background: white; padding: 25px; border-radius: 15px; margin-bottom: 25px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; border: 1px solid var(--gold-l); }
-        .order-head-grid input { padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-family: 'Heebo'; font-size: 16px; width: 100%; box-sizing: border-box; }
+        /* Order Form Items */
+        .order-card { background: white; padding: 25px; border-radius: 15px; margin-bottom: 25px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; border: 1px solid var(--gold-l); }
+        .order-card input { padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-family: 'Heebo'; width: 100%; box-sizing: border-box; }
 
-        /* Products Display */
-        .cat-card { background: white; border-radius: 20px; padding: 25px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        .cat-card h3 { color: var(--teal); border-bottom: 2px solid var(--gold-l); padding-bottom: 10px; margin-top: 0; }
-        .prod-row { padding: 15px 0; border-bottom: 1px solid #f5f5f5; }
-        .prod-main { display: flex; justify-content: space-between; align-items: center; }
-        .qty-controls { display: flex; align-items: center; gap: 15px; }
-        .btn-round { width: 32px; height: 32px; border-radius: 50%; border: none; background: var(--teal); color: white; cursor: pointer; font-size: 20px; font-weight: bold; display: flex; align-items: center; justify-content: center; }
+        .cat-section { background: white; border-radius: 20px; padding: 25px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .cat-section h3 { color: var(--teal); border-bottom: 2px solid var(--gold-l); padding-bottom: 10px; margin-top: 0; }
+        .prod-item { padding: 15px 0; border-bottom: 1px solid #f5f5f5; }
+        .prod-flex { display: flex; justify-content: space-between; align-items: center; }
+        .plus-minus { display: flex; align-items: center; gap: 15px; }
+        .btn-round { width: 34px; height: 34px; border-radius: 50%; border: none; background: var(--teal); color: white; cursor: pointer; font-size: 20px; font-weight: bold; display: flex; align-items: center; justify-content: center; }
         .btn-round:hover { background: var(--gold); }
-        .qty-num { font-weight: 900; font-size: 18px; min-width: 20px; text-align: center; }
-        
-        .options-box { margin-top: 8px; display: flex; gap: 12px; flex-wrap: wrap; padding-right: 5px; }
-        .opt-item { font-size: 0.85em; display: flex; align-items: center; gap: 4px; color: #666; cursor: pointer; }
+        .qty-label { font-weight: 900; font-size: 18px; min-width: 25px; text-align: center; }
+        .opts-row { margin-top: 8px; display: flex; gap: 12px; flex-wrap: wrap; }
+        .opt-label { font-size: 0.85em; display: flex; align-items: center; gap: 4px; color: #666; cursor: pointer; }
 
-        /* Management Editor */
-        .mgmt-wrap { display: flex; gap: 20px; height: 75vh; }
+        /* Management Sidebar Layout */
+        .mgmt-box { display: flex; gap: 20px; height: 75vh; }
         .sidebar { width: 280px; background: white; border-radius: 15px; padding: 15px; overflow-y: auto; border: 1px solid var(--gold-l); }
-        .side-cat { font-weight: 900; color: var(--teal); font-size: 0.8em; margin: 15px 0 5px; border-bottom: 1px solid #eee; }
-        .side-item { padding: 8px 12px; cursor: pointer; border-radius: 8px; font-size: 0.9em; border-bottom: 1px solid #f9f9f9; }
-        .side-item.active { background: var(--teal); color: white; }
+        .side-cat { font-weight: 900; color: var(--teal); font-size: 0.85em; margin: 15px 0 5px; border-bottom: 1px solid #eee; }
+        .side-prod { padding: 8px 12px; cursor: pointer; border-radius: 8px; font-size: 0.9em; border-bottom: 1px solid #f9f9f9; }
+        .side-prod.active { background: var(--teal); color: white; }
         
-        .editor-pane { flex: 1; background: white; border-radius: 15px; padding: 0; border: 1px solid var(--gold-l); overflow-y: auto; position: relative; }
-        .editor-header-stats { background: var(--teal); color: white; padding: 15px 25px; display: flex; justify-content: space-around; position: sticky; top: 0; z-index: 10; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .editor-header-stats b { color: var(--gold); font-size: 1.3em; }
-        .editor-content { padding: 25px; }
+        .editor-pane { flex: 1; background: white; border-radius: 15px; border: 1px solid var(--gold-l); overflow-y: auto; position: relative; }
+        .editor-top-stats { background: var(--teal); color: white; padding: 15px 25px; display: flex; justify-content: space-around; position: sticky; top: 0; z-index: 10; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .editor-top-stats b { color: var(--gold); font-size: 1.3em; }
 
-        /* Footer Bar */
-        .summary-bar { position: fixed; bottom: 0; width: 100%; background: var(--teal); color: white; padding: 15px; display: flex; justify-content: space-around; align-items: center; z-index: 1001; }
+        /* Summary Bar */
+        .summary-bar { position: fixed; bottom: 0; width: 100%; background: var(--teal); color: white; padding: 20px; display: flex; justify-content: space-around; align-items: center; z-index: 1001; }
         .summary-bar b { color: var(--gold); font-size: 1.5em; }
-        .export-pdf-btn { background: var(--gold); color: white; border: none; padding: 12px 35px; border-radius: 50px; font-weight: 900; cursor: pointer; font-size: 18px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .btn-pdf { background: var(--gold); color: white; border: none; padding: 14px 40px; border-radius: 50px; font-weight: 900; cursor: pointer; font-size: 18px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
 
-        /* PDF Layout */
-        #pdf-template { padding: 40px; background: white; display: none; }
+        /* PDF Format */
+        #pdf-output { padding: 40px; background: white; display: none; }
         .pdf-header { text-align: center; border-bottom: 3px solid var(--teal); padding-bottom: 15px; margin-bottom: 25px; }
-        .pdf-header img { height: 90px; }
-        .pdf-client { margin-bottom: 25px; line-height: 1.7; font-size: 15px; }
-        .pdf-table { width: 100%; border-collapse: collapse; }
-        .pdf-table th { background: var(--teal); color: white; padding: 10px; text-align: right; }
-        .pdf-table td { padding: 10px; border-bottom: 1px solid #eee; }
-        .pdf-opt-text { font-size: 0.85em; color: #555; margin-right: 10px; }
-        .pdf-total-box { margin-top: 25px; text-align: left; font-size: 22px; font-weight: 900; color: var(--teal); }
-
-        @media print { .nav-main, .summary-bar, .sidebar, .sub-nav-btns { display: none !important; } }
+        .pdf-header img { height: 100px; margin-bottom: 10px; }
+        .pdf-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .pdf-table th { background: var(--teal); color: white; padding: 12px; text-align: right; }
+        .pdf-table td { padding: 12px; border-bottom: 1px solid #eee; }
     </style>
 </head>
 <body>
 
-<div class="header"><img src="libis-logo.png" alt="ליביס"></div>
+<div class="header"><img src="libis-logo.png" alt="Libis"></div>
 
 <div class="nav-main">
-    <button class="nav-btn active" onclick="changeTab('order-view', this)">יצירת הזמנה</button>
-    <button class="nav-btn" onclick="changeTab('manage-view', this)">עדכון עלויות</button>
+    <button class="nav-btn active" onclick="nav('order', this)">יצירת הזמנה</button>
+    <button class="nav-btn" onclick="nav('manage', this)">עדכון עלויות</button>
 </div>
 
-<div id="order-view" class="container active">
-    <div class="order-head-grid">
+<div id="order" class="container active">
+    <div class="order-card">
         <input type="text" id="cust-name" placeholder="שם הלקוח / אירוע">
         <input type="text" id="cust-date" placeholder="תאריך האירוע">
         <input type="text" id="cust-loc" placeholder="מיקום האירוע">
         <input type="text" id="cust-phone" placeholder="טלפון ליצירת קשר">
     </div>
-    <div id="order-menu-display"></div>
+    <div id="order-list-area"></div>
 </div>
 
-<div id="manage-view" class="container">
-    <div class="sub-nav-btns" style="margin-bottom: 20px; text-align: center;">
-        <button class="nav-btn active" id="bank-tab-btn" onclick="toggleMgmtSection('bank')">בנק חומרי גלם</button>
-        <button class="nav-btn" id="recipes-tab-btn" onclick="toggleMgmtSection('recipes')">מתכוני מוצרים</button>
+<div id="manage" class="container">
+    <div style="text-align: center; margin-bottom: 20px;">
+        <button class="nav-btn active" id="bank-tab" onclick="mgmt('bank')">בנק חומרי גלם</button>
+        <button class="nav-btn" id="recipe-tab" onclick="mgmt('recipe')">מתכוני מוצרים</button>
     </div>
-
-    <div id="section-bank">
-        <div class="cat-card">
-            <h3>ניהול בנק חומרי גלם מרכזי</h3>
-            <table width="100%" cellpadding="10">
-                <thead style="background:#f4f4f4;"><tr><th>חומר</th><th>יחידה</th><th>מחיר (₪)</th><th></th></tr></thead>
-                <tbody id="bank-table-body"></tbody>
+    <div id="bank-sec">
+        <div class="cat-section">
+            <h3>בנק חומרי גלם מרכזי</h3>
+            <table width="100%">
+                <thead style="background:#eee;"><tr><th>חומר</th><th>יחידה</th><th>מחיר</th><th></th></tr></thead>
+                <tbody id="bank-table"></tbody>
             </table>
-            <button onclick="addNewBankMaterial()" style="margin-top:15px; padding:8px 20px; cursor:pointer;">+ הוסף חומר חדש לבנק</button>
+            <button onclick="addBank()" class="btn-round" style="width:auto; border-radius:8px; padding:0 15px; margin-top:10px;">+ הוסף חומר</button>
         </div>
     </div>
-
-    <div id="section-recipes" style="display:none;">
-        <div class="mgmt-wrap">
-            <div class="sidebar" id="mgmt-side-menu"></div>
-            <div class="editor-pane" id="mgmt-editor-content">
-                <div style="text-align:center; margin-top:150px; color:#999;">בחר מוצר מהתפריט הימני לעדכון</div>
+    <div id="recipe-sec" style="display:none;">
+        <div class="mgmt-box">
+            <div class="sidebar" id="recipe-sidebar"></div>
+            <div class="editor-pane" id="recipe-editor">
+                <div style="text-align:center; margin-top:150px; color:#999;">בחר מוצר מהרשימה</div>
             </div>
         </div>
     </div>
 </div>
 
 <div class="summary-bar">
-    <div>סה"כ לתשלום: <b id="ui-grand-total">0 ₪</b></div>
-    <div id="profit-indicator">רווח: <b id="ui-grand-profit">0 ₪</b></div>
-    <div><input type="checkbox" id="check-show-profit-pdf" checked> הצג רווח ב-PDF</div>
-    <button class="export-pdf-btn" onclick="doExportPDF()">Export to PDF</button>
+    <div>סה"כ הזמנה: <b id="stat-rev">0 ₪</b></div>
+    <div id="stat-prof-box">רווח: <b id="stat-prof">0 ₪</b></div>
+    <div><input type="checkbox" id="pdf-inc-prof" checked> הצג רווח ב-PDF</div>
+    <button class="btn-pdf" onclick="exportPDF()">Export to PDF</button>
 </div>
 
-<div id="pdf-template">
-    <div class="pdf-header"><img src="libis-logo.png" alt="Libis"></div>
-    <div class="pdf-client" id="pdf-client-info"></div>
+<div id="pdf-output">
+    <div class="pdf-header"><img src="libis-logo.png" alt="Logo"></div>
+    <div id="pdf-client-details" style="line-height:1.7; margin-bottom:20px;"></div>
     <table class="pdf-table">
-        <thead><tr><th>תיאור מוצר</th><th>כמות</th><th>מחיר יח'</th><th>סה"כ</th></tr></thead>
-        <tbody id="pdf-table-body"></tbody>
+        <thead><tr><th>פריט</th><th>כמות</th><th>מחיר יח'</th><th>סה"כ</th></tr></thead>
+        <tbody id="pdf-rows"></tbody>
     </table>
-    <div class="pdf-total-box" id="pdf-total-val"></div>
-    <div style="margin-top:50px; text-align:center; font-size:13px; color:#666; border-top:1px solid #eee; padding-top:20px;">
+    <div id="pdf-total" style="text-align:left; font-size:22px; font-weight:900; color:var(--teal); margin-top:30px;"></div>
+    <div style="text-align:center; margin-top:50px; font-size:12px; color:#888; border-top:1px solid #eee; padding-top:20px;">
         ליביס - קייטרינג חלבי בוטיק | 058-7703135 | כשרות מהודרת בד"ץ
     </div>
 </div>
 
 <script>
-    // תפריט מלא משני עמודי ה-PDF + אפשרויות (Options)
-    const libisMenu = [
+    // תפריט מלא משני עמודי ה-PDF - סוף סוף הכל כאן
+    const initialMenu = [
         { cat: "פסטות ומוקרמים", items: [
             {id:1, name:"פסטה ברוטב שמנת פטריות", price:180, recipe:[]},
             {id:2, name:"פסטה ברוטב רוזה", price:180, recipe:[]},
@@ -161,234 +151,162 @@
         { cat: "כריכונים ופוקצ'ות", items: [
             {id:16, name:"24 כריכוני ביס", price:200, recipe:[]},
             {id:17, name:"24 כריכוני סביח", price:200, recipe:[]},
-            {id:18, name:"24 מקלות שום בעשבי תיבול", price:180, recipe:[]},
-            {id:19, name:"24 פוקצ'ות אישיות", price:180, recipe:[], options: ["עשבי תיבול", "אנטיפסטי", "בלקני"]},
-            {id:20, name:"20 טורטיות ממולאות", price:180, recipe:[]}
+            {id:18, name:"20 קוראסונים", price:200, recipe:[]},
+            {id:19, name:"24 מקלות שום", price:180, recipe:[]},
+            {id:20, name:"24 פוקצ'ות אישיות", price:180, recipe:[], options: ["עשבי תיבול", "אנטיפסטי", "בלקני"]},
+            {id:21, name:"20 טורטיות ממולאות", price:180, recipe:[]}
         ]},
         { cat: "דגים", items: [
-            {id:21, name:"פילה סלומון פרימיום", price:330, recipe:[], options: ["טריאקי", "עשבי תיבול", "דבש וחרדל"]},
-            {id:22, name:"פילה מושט ברוטב מרוקאי", price:220, recipe:[]},
-            {id:23, name:"25 שיפודי סלומון", price:300, recipe:[]}
+            {id:22, name:"פילה סלומון טריאקי", price:330, recipe:[], options: ["טריאקי", "עשבי תיבול", "דבש וחרדל"]},
+            {id:23, name:"פילה מושט ברוטב מרוקאי", price:220, recipe:[]},
+            {id:24, name:"25 שיפודי סלומון", price:300, recipe:[]}
         ]},
         { cat: "קינוחים", items: [
-            {id:24, name:"20 כוסיות מוס גבינה", price:180, recipe:[]},
-            {id:25, name:"20 כוסיות מוס טריקולד", price:180, recipe:[]},
-            {id:26, name:"24 פחזניות במילוי קרם", price:170, recipe:[]},
-            {id:27, name:"24 סופלה שוקלד", price:170, recipe:[]}
+            {id:25, name:"20 כוסיות מוס גבינה", price:180, recipe:[]},
+            {id:26, name:"20 כוסיות מוס טריקולד", price:180, recipe:[]},
+            {id:27, name:"24 פחזניות במילוי קרם", price:170, recipe:[]},
+            {id:28, name:"24 סופלה שוקלד", price:170, recipe:[]}
         ]}
     ];
 
-    let state = JSON.parse(localStorage.getItem('libis_v7_db')) || { menu: libisMenu, bank: [] };
-    let activeOrder = {}; // { itemID: { qty: X, opts: [] } }
+    const initialBank = [
+        {id: 1, name: "פסטה יבשה", unit: "קילו", price: 12},
+        {id: 2, name: "שמנת לבישול", unit: "ליטר", price: 21},
+        {id: 3, name: "פטריות", unit: "סלסלה", price: 15},
+        {id: 4, name: "סלמון טרי", unit: "קילו", price: 95},
+        {id: 5, name: "אריזת מגש", unit: "יחידה", price: 6}
+    ];
 
-    function changeTab(id, btn) {
-        document.querySelectorAll('.container').forEach(c => c.classList.remove('active'));
-        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-        btn.classList.add('active');
-        refreshAll();
+    let db = JSON.parse(localStorage.getItem('libis_pro_final')) || { menu: initialMenu, bank: initialBank };
+    let order = {}; // {itemID: {q: 1, o: []}}
+
+    function nav(t, b) {
+        document.querySelectorAll('.container').forEach(c=>c.classList.remove('active'));
+        document.querySelectorAll('.nav-btn').forEach(n=>n.classList.remove('active'));
+        document.getElementById(t).classList.add('active');
+        b.classList.add('active');
+        render();
     }
 
-    function toggleMgmtSection(mode) {
-        document.getElementById('section-bank').style.display = mode === 'bank' ? 'block' : 'none';
-        document.getElementById('section-recipes').style.display = mode === 'recipes' ? 'block' : 'none';
-        document.getElementById('bank-tab-btn').classList.toggle('active', mode === 'bank');
-        document.getElementById('recipes-tab-btn').classList.toggle('active', mode === 'recipes');
-        refreshAll();
+    function mgmt(s) {
+        document.getElementById('bank-sec').style.display = s==='bank'?'block':'none';
+        document.getElementById('recipe-sec').style.display = s==='recipe'?'block':'none';
+        document.getElementById('bank-tab').classList.toggle('active', s==='bank');
+        document.getElementById('recipe-tab').classList.toggle('active', s==='recipe');
+        render();
     }
 
-    function modQty(id, delta) {
-        if (!activeOrder[id]) activeOrder[id] = { qty: 0, opts: [] };
-        activeOrder[id].qty = Math.max(0, activeOrder[id].qty + delta);
-        refreshAll();
+    function modQty(id, d) {
+        if(!order[id]) order[id] = {q:0, o:[]};
+        order[id].q = Math.max(0, order[id].q + d);
+        render();
     }
 
-    function toggleOpt(id, optName) {
-        if (!activeOrder[id]) activeOrder[id] = { qty: 0, opts: [] };
-        const idx = activeOrder[id].opts.indexOf(optName);
-        if (idx === -1) activeOrder[id].opts.push(optName);
-        else activeOrder[id].opts.splice(idx, 1);
-        refreshAll();
+    function toggleOpt(id, opt) {
+        const idx = order[id].o.indexOf(opt);
+        if(idx===-1) order[id].o.push(opt); else order[id].o.splice(idx,1);
+        render();
     }
 
-    function refreshAll() {
-        // Order Render
-        const orderMenu = document.getElementById('order-menu-display');
-        orderMenu.innerHTML = state.menu.map(c => `
-            <div class="cat-card">
+    function render() {
+        const orderList = document.getElementById('order-list-area');
+        orderList.innerHTML = db.menu.map(c => `
+            <div class="cat-section">
                 <h3>${c.cat}</h3>
-                ${c.items.map(i => {
-                    const q = activeOrder[i.id]?.qty || 0;
-                    return `
-                    <div class="prod-row">
-                        <div class="prod-main">
+                ${c.items.map(i => `
+                    <div class="prod-item">
+                        <div class="prod-flex">
                             <span>${i.name} <b>(${i.price} ₪)</b></span>
-                            <div class="qty-controls">
+                            <div class="plus-minus">
                                 <button class="btn-round" onclick="modQty(${i.id}, -1)">-</button>
-                                <span class="qty-num">${q}</span>
+                                <span class="qty-label">${order[i.id]?.q || 0}</span>
                                 <button class="btn-round" onclick="modQty(${i.id}, 1)">+</button>
                             </div>
                         </div>
-                        ${i.options ? `
-                            <div class="options-box">
-                                ${i.options.map(opt => `
-                                    <label class="opt-item">
-                                        <input type="checkbox" ${activeOrder[i.id]?.opts.includes(opt) ? 'checked' : ''} onchange="toggleOpt(${i.id}, '${opt}')"> ${opt}
-                                    </label>
-                                `).join('')}
-                            </div>
-                        ` : ''}
-                    </div>`;
-                }).join('')}
+                        ${i.options ? `<div class="opts-row">${i.options.map(o => `
+                            <label class="opt-label"><input type="checkbox" ${order[i.id]?.o.includes(o)?'checked':''} onchange="toggleOpt(${i.id}, '${o}')">${o}</label>
+                        `).join('')}</div>` : ''}
+                    </div>
+                `).join('')}
             </div>
         `).join('');
 
-        // Sidebar Render
-        const sideMenu = document.getElementById('mgmt-side-menu');
-        sideMenu.innerHTML = state.menu.map(c => `
-            <div class="side-cat">${c.cat}</div>
-            ${c.items.map(i => `<div class="side-item" id="side-p-${i.id}" onclick="openItemEditor(${i.id})">${i.name}</div>`).join('')}
-        `).join('');
-
-        // Bank Render
-        const bankTbody = document.getElementById('bank-table-body');
-        bankTbody.innerHTML = state.bank.map((m, idx) => `
+        document.getElementById('bank-table').innerHTML = db.bank.map((m, idx) => `
             <tr>
-                <td><input type="text" value="${m.name}" onchange="updBIn(${idx}, 'name', this.value)"></td>
-                <td><input type="text" value="${m.unit}" onchange="updBIn(${idx}, 'unit', this.value)"></td>
-                <td><input type="number" value="${m.price}" onchange="updBIn(${idx}, 'price', parseFloat(this.value))"></td>
-                <td><button onclick="delBIn(${idx})">✖</button></td>
+                <td><input type="text" value="${m.name}" onchange="updB(${idx},'name',this.value)"></td>
+                <td><input type="text" value="${m.unit}" onchange="updB(${idx},'unit',this.value)"></td>
+                <td><input type="number" value="${m.price}" onchange="updB(${idx},'price',this.value)"></td>
+                <td><button onclick="delB(${idx})">✖</button></td>
             </tr>
         `).join('');
 
-        calcGlobalTotals();
+        document.getElementById('recipe-sidebar').innerHTML = db.menu.map(c => `
+            <div class="side-cat">${c.cat}</div>
+            ${c.items.map(i => `<div class="side-prod" id="side-${i.id}" onclick="edit(${i.id})">${i.name}</div>`).join('')}
+        `).join('');
+
+        calc();
     }
 
-    function openItemEditor(id) {
-        document.querySelectorAll('.side-item').forEach(el => el.classList.remove('active'));
-        document.getElementById('side-p-'+id).classList.add('active');
-        const item = state.menu.flatMap(c => c.items).find(i => i.id === id);
+    function edit(id) {
+        document.querySelectorAll('.side-prod').forEach(l=>l.classList.remove('active'));
+        document.getElementById('side-'+id).classList.add('active');
+        const item = db.menu.flatMap(c=>c.items).find(i=>i.id===id);
         
-        const renderEditor = () => {
+        const redraw = () => {
             const cost = item.recipe.reduce((s, r) => {
-                const bm = state.bank.find(b => b.id === r.bankId);
-                return s + (bm ? bm.price * r.qty : (parseFloat(r.cost) || 0));
+                const b = db.bank.find(x=>x.id===r.bid);
+                return s + (b ? b.price * r.qty : (parseFloat(r.cost)||0));
             }, 0);
-            
-            const pane = document.getElementById('mgmt-editor-content');
-            pane.innerHTML = `
-                <div class="editor-header-stats">
-                    <div>עלות ייצור: <b id="ed-cost">${cost.toFixed(2)} ₪</b></div>
-                    <div>מחיר מכירה: <b>${item.price} ₪</b></div>
-                    <div>רווח: <b id="ed-profit">${(item.price - cost).toFixed(2)} ₪</b></div>
+            document.getElementById('recipe-editor').innerHTML = `
+                <div class="editor-top-stats">
+                    <div>עלות: <b>${cost.toFixed(2)} ₪</b></div>
+                    <div>מכירה: <b>${item.price} ₪</b></div>
+                    <div>רווח: <b>${(item.price - cost).toFixed(2)} ₪</b></div>
                 </div>
-                <div class="editor-content">
-                    <h2>עריכת ${item.name}</h2>
-                    <p>מחיר מכירה: <input type="number" value="${item.price}" onchange="updItemPrice(${id}, this.value)"></p>
-                    <table width="100%">
+                <div style="padding:25px;">
+                    <h3>${item.name}</h3>
+                    מחיר מכירה: <input type="number" value="${item.price}" onchange="updP(${id},this.value)">
+                    <table width="100%" style="margin-top:20px;">
                         <thead><tr><th>חומר</th><th>כמות</th><th>עלות</th><th></th></tr></thead>
-                        <tbody>
-                            ${item.recipe.map((r, idx) => {
-                                const bm = r.bankId !== undefined ? state.bank.find(b => b.id === r.bankId) : null;
-                                return `
-                                <tr>
-                                    <td>${bm ? '🏦 ' + bm.name : `<input type="text" value="${r.name}" onchange="updRecRow(${id}, ${idx}, 'name', this.value)">`}</td>
-                                    <td><input type="number" step="0.1" value="${r.qty}" onchange="updRecRow(${id}, ${idx}, 'qty', parseFloat(this.value))"></td>
-                                    <td>${bm ? (bm.price * r.qty).toFixed(2) : `<input type="number" value="${r.cost}" onchange="updRecRow(${id}, ${idx}, 'cost', parseFloat(this.value))">`}</td>
-                                    <td><button onclick="delRecRow(${id}, ${idx})">✖</button></td>
-                                </tr>`;
-                            }).join('')}
-                        </tbody>
+                        <tbody>${item.recipe.map((r,idx) => {
+                            const b = r.bid ? db.bank.find(x=>x.id===r.bid) : null;
+                            return `<tr>
+                                <td>${b ? '🏦 '+b.name : `<input type="text" value="${r.name}" onchange="updR(${id},${idx},'name',this.value)">`}</td>
+                                <td><input type="number" value="${r.qty}" onchange="updR(${id},${idx},'qty',this.value)"></td>
+                                <td>${b ? (b.price*r.qty).toFixed(2) : `<input type="number" value="${r.cost}" onchange="updR(${id},${idx},'cost',this.value)">`}</td>
+                                <td><button onclick="delR(${id},${idx})">✖</button></td>
+                            </tr>`;
+                        }).join('')}</tbody>
                     </table>
                     <div style="margin-top:20px; display:flex; gap:10px;">
-                        <select id="pick-bank" style="flex:1;">
-                            <option value="">-- בחר מהבנק --</option>
-                            ${state.bank.map(b => `<option value="${b.id}">${b.name}</option>`).join('')}
-                        </select>
-                        <button onclick="addRecFromBank(${id})">הוסף מהבנק</button>
-                        <button onclick="addRecUnique(${id})" style="background:#eee; color:#333; border:1px solid #ccc;">+ חומר ייחודי</button>
+                        <select id="pick-bank" style="flex:1;"><option value="">-- בחר מהבנק --</option>${db.bank.map(b=>`<option value="${b.id}">${b.name}</option>`).join('')}</select>
+                        <button onclick="addBankR(${id})">מהבנק</button><button onclick="addUniqueR(${id})">+ ייחודי</button>
                     </div>
-                    <button onclick="saveAndRedraw(${id})" style="margin-top:40px; background:var(--gold); color:white; border:none; padding:12px 40px; border-radius:10px; cursor:pointer; font-weight:bold;">שמור נתוני מוצר</button>
+                    <button onclick="save()" style="margin-top:30px; background:var(--gold); color:white; width:100%; padding:15px; border:none; border-radius:10px; cursor:pointer; font-weight:bold;">שמור נתונים</button>
                 </div>
             `;
         };
-        renderEditor();
+        redraw();
     }
 
-    function calcGlobalTotals() {
-        let rev = 0; let cost = 0;
-        state.menu.flatMap(c => c.items).forEach(i => {
-            const q = activeOrder[i.id]?.qty || 0;
+    function calc() {
+        let rev=0, cost=0;
+        db.menu.flatMap(c=>c.items).forEach(i => {
+            const q = order[i.id]?.q || 0;
             rev += q * i.price;
-            const iCost = i.recipe.reduce((s, r) => {
-                const bm = state.bank.find(b => b.id === r.bankId);
-                return s + (bm ? bm.price * r.qty : (parseFloat(r.cost) || 0));
-            }, 0);
-            cost += q * iCost;
+            cost += q * i.recipe.reduce((s,r)=>{
+                const b = db.bank.find(x=>x.id===r.bid);
+                return s + (b ? b.price*r.qty : (parseFloat(r.cost)||0));
+            },0);
         });
-        document.getElementById('ui-grand-total').innerText = rev + ' ₪';
-        document.getElementById('ui-grand-profit').innerText = (rev - cost).toFixed(2) + ' ₪';
+        document.getElementById('stat-rev').innerText = rev + ' ₪';
+        document.getElementById('stat-prof').innerText = (rev-cost).toFixed(2) + ' ₪';
     }
 
-    function saveAndRedraw(id) { localStorage.setItem('libis_v7_db', JSON.stringify(state)); openItemEditor(id); calcGlobalTotals(); }
-    function updBIn(i, f, v) { state.bank[i][f] = v; localStorage.setItem('libis_v7_db', JSON.stringify(state)); }
-    function delBIn(i) { state.bank.splice(i,1); refreshAll(); }
-    function addNewBankMaterial() { state.bank.push({id:Date.now(), name:"חומר חדש", unit:"יח", price:0}); refreshAll(); }
-    function updItemPrice(pid, v) { state.menu.flatMap(c => c.items).find(i => i.id === pid).price = parseFloat(v); }
-    function addRecFromBank(pid) { const bid = parseInt(document.getElementById('pick-bank').value); if(bid){ state.menu.flatMap(c => c.items).find(i => i.id === pid).recipe.push({bankId:bid, qty:1}); openItemEditor(pid); } }
-    function addRecUnique(pid) { state.menu.flatMap(c => c.items).find(i => i.id === pid).recipe.push({name:'', qty:1, cost:0}); openItemEditor(pid); }
-    function updRecRow(pid, idx, f, v) { state.menu.flatMap(c => c.items).find(i => i.id === pid).recipe[idx][f] = v; openItemEditor(pid); }
-    function delRecRow(pid, idx) { state.menu.flatMap(c => c.items).find(i => i.id === pid).recipe.splice(idx,1); openItemEditor(pid); }
-
-    function doExportPDF() {
-        const tmp = document.getElementById('pdf-template');
-        tmp.style.display = 'block';
-        
-        document.getElementById('pdf-client-info').innerHTML = `
-            <b>לכבוד:</b> ${document.getElementById('cust-name').value || 'לקוח ליביס'}<br>
-            <b>תאריך:</b> ${document.getElementById('cust-date').value}<br>
-            <b>מיקום האירוע:</b> ${document.getElementById('cust-loc').value}<br>
-            <b>טלפון:</b> ${document.getElementById('cust-phone').value}
-        `;
-
-        let bodyHtml = ''; let total = 0; let costTotal = 0;
-        state.menu.flatMap(c => c.items).forEach(i => {
-            const ord = activeOrder[i.id];
-            if (ord && ord.qty > 0) {
-                const sub = ord.qty * i.price;
-                total += sub;
-                const iCost = i.recipe.reduce((s, r) => {
-                    const bm = state.bank.find(b => b.id === r.bankId);
-                    return s + (bm ? bm.price * r.qty : (parseFloat(r.cost) || 0));
-                }, 0);
-                costTotal += ord.qty * iCost;
-                
-                bodyHtml += `
-                    <tr>
-                        <td>
-                            <b>${i.name}</b>
-                            ${ord.opts.length > 0 ? `<div class="pdf-opt-text">בחירה: ${ord.opts.join(', ')}</div>` : ''}
-                        </td>
-                        <td>${ord.qty}</td>
-                        <td>${i.price} ₪</td>
-                        <td>${sub} ₪</td>
-                    </tr>
-                `;
-            }
-        });
-
-        document.getElementById('pdf-table-body').innerHTML = bodyHtml;
-        let sumStr = `סה"כ לתשלום: ${total} ₪`;
-        if (document.getElementById('check-show-profit-pdf').checked) {
-            sumStr += `<div style="font-size:14px; color:green; margin-top:5px;">רווח משוער: ${(total - costTotal).toFixed(2)} ₪</div>`;
-        }
-        document.getElementById('pdf-total-val').innerHTML = sumStr;
-
-        const opt = { margin: 0, filename: `הזמנת_ליביס_${document.getElementById('cust-name').value}.pdf`, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
-        html2pdf().from(tmp).set(opt).save().then(() => tmp.style.display = 'none');
-    }
-
-    window.onload = refreshAll;
-</script>
-</body>
-</html>
+    function save() { localStorage.setItem('libis_pro_final', JSON.stringify(db)); render(); }
+    function updB(i,f,v) { db.bank[i][f] = f==='price'?parseFloat(v):v; save(); }
+    function delB(i) { db.bank.splice(i,1); render(); }
+    function addBank() { db.bank.push({id:Date.now(), name:'חדש', unit:'יח', price:0}); render(); }
+    function updP(id,v) { db.menu.flatMap(c=>c.items).find(i=>i.id===id).price = parseFloat(v); }
+    function addBankR(id) { const b=parseInt(document.getElementById('pick-bank').value); if(b){db.menu.flatMap(c=>
