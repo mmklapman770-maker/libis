@@ -320,11 +320,15 @@
                                 <b style="font-size:15px;">${item.name}</b>
                                 <span style="color:#888; font-size:13px; margin-right:6px;">${item.price} ₪</span>
                             </div>
-                            <button class="add-btn-small" style="margin:0;" onclick="addToOrder(${item.id})">+ הוסף להזמנה</button>
+                            ${activeOrders.length === 0
+                                ? `<button class="add-btn-small" style="margin:0;" onclick="addToOrder(${item.id})">+ הוסף להזמנה</button>`
+                                : `<button class="add-btn-small" style="margin:0; background:var(--gold-light); color:var(--gold);" onclick="addToOrder(${item.id})">+ הוסף סוג נוסף</button>`
+                            }
                         </div>
-                        ${activeOrders.map(({o, idx}) => `
+                        ${activeOrders.map(({o, idx}, entryNum) => `
                             <div style="background:#f0f8f9; border:1px solid #c5e8ec; border-radius:10px; padding:12px 14px; margin-top:8px;">
                                 <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                                    ${activeOrders.length > 1 ? `<span style="font-size:11px;background:var(--teal);color:white;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-weight:900;">${entryNum+1}</span>` : ''}
                                     <div style="display:flex; align-items:center; gap:6px; background:white; border-radius:50px; padding:4px 8px; border:1px solid #ddd;">
                                         <button onclick="updateOrderQty(${idx},-1)"
                                             style="width:28px;height:28px;border-radius:50%;border:none;background:var(--teal);color:white;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;">−</button>
@@ -337,10 +341,10 @@
                                 </div>
                                 ${item.options ? `
                                 <div style="margin-top:10px;">
-                                    <div style="font-size:12px; color:#666; margin-bottom:6px; font-weight:700;">בחר סוג:</div>
+                                    <div style="font-size:12px; color:#666; margin-bottom:6px; font-weight:700;">בחר סוג${activeOrders.length > 1 ? ' לשורה ' + (entryNum+1) : ''}:</div>
                                     <div style="display:flex; gap:8px; flex-wrap:wrap;">
                                         ${item.options.map(opt => `
-                                            <label style="display:flex; align-items:center; gap:6px; background:${o.option===opt?'var(--teal)':'white'}; color:${o.option===opt?'white':'#333'}; border:2px solid ${o.option===opt?'var(--teal)':'#ddd'}; border-radius:50px; padding:6px 14px; cursor:pointer; font-size:13px; font-weight:${o.option===opt?'700':'400'}; transition:0.2s;">
+                                            <label style="display:flex;align-items:center;gap:6px;background:${o.option===opt?'var(--teal)':'white'};color:${o.option===opt?'white':'#333'};border:2px solid ${o.option===opt?'var(--teal)':'#ddd'};border-radius:50px;padding:6px 14px;cursor:pointer;font-size:13px;font-weight:${o.option===opt?'700':'400'};transition:0.2s;">
                                                 <input type="radio" name="opt-${idx}" value="${opt}" ${o.option===opt?'checked':''} onchange="updateOrderOpt(${idx},'${opt}'); render();" style="display:none;">
                                                 ${opt}
                                             </label>
@@ -348,7 +352,7 @@
                                     </div>
                                 </div>` : ''}
                                 <div style="margin-top:10px;">
-                                    <input type="text" placeholder="הערה למוצר זה (אופציונלי)..."
+                                    <input type="text" placeholder="הערה (אופציונלי)..."
                                         value="${o.note || ''}"
                                         onchange="updateOrderNote(${idx}, this.value)"
                                         style="width:100%; padding:8px 12px; border:1px solid #ddd; border-radius:8px; font-family:'Heebo'; font-size:13px; box-sizing:border-box; background:white;">
