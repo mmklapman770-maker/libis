@@ -390,20 +390,30 @@
             <div style="display:flex; align-items:center; gap:4px; margin-top:15px; margin-bottom:2px;">
                 <input value="${cat.cat}"
                     onchange="renameCategory(${cIdx}, this.value)"
-                    style="font-weight:900; color:#888; font-size:12px; border:none; background:transparent; width:100%; padding:2px 4px; border-radius:4px; font-family:'Heebo';"
+                    style="font-weight:900; color:#888; font-size:12px; border:none; background:transparent; flex:1; padding:2px 4px; border-radius:4px; font-family:'Heebo';"
                     onfocus="this.style.background='#f0f0f0'; this.style.border='1px solid #ddd';"
                     onblur="this.style.background='transparent'; this.style.border='none';">
             </div>
-            ${cat.items.map((item, iIdx) => `
-                <div class="sidebar-item" id="side-${item.id}" style="display:flex; align-items:center; gap:4px; padding:6px 8px;">
-                    <input value="${item.name}"
-                        onchange="renameMenuItem(${cIdx}, ${iIdx}, this.value)"
-                        onclick="event.stopPropagation(); openEditor(${cIdx}, ${iIdx});"
-                        style="flex:1; border:none; background:transparent; font-size:14px; font-family:'Heebo'; cursor:pointer; padding:2px 4px; border-radius:4px; color:inherit;"
-                        onfocus="this.style.background='white'; this.style.border='1px solid #ddd'; this.style.cursor='text';"
-                        onblur="this.style.background='transparent'; this.style.border='none'; this.style.cursor='pointer';">
-                </div>
-            `).join('')}
+            <div id="drop-zone-${cIdx}"
+                ondragover="event.preventDefault(); document.getElementById('drop-zone-${cIdx}').style.background='#e0f2f4';"
+                ondragleave="document.getElementById('drop-zone-${cIdx}').style.background='transparent';"
+                ondrop="dropItem(event,${cIdx}); document.getElementById('drop-zone-${cIdx}').style.background='transparent';"
+                style="border-radius:8px; min-height:10px; transition:0.2s;">
+                ${cat.items.map((item, iIdx) => `
+                    <div class="sidebar-item" id="side-${item.id}"
+                        draggable="true"
+                        ondragstart="dragItem(event,${cIdx},${iIdx})"
+                        onclick="openEditor(${cIdx},${iIdx})"
+                        style="display:flex; align-items:center; gap:6px; padding:6px 8px; cursor:pointer;">
+                        <span style="color:#ccc; cursor:grab; font-size:15px;" title="גרור">⠿</span>
+                        <span style="flex:1; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.name}</span>
+                        <button onclick="event.stopPropagation(); promptRenameMenuItem(${cIdx},${iIdx});"
+                            title="ערוך שם" style="border:none;background:none;cursor:pointer;color:#aaa;font-size:14px;padding:2px;line-height:1;">✏️</button>
+                        <button onclick="event.stopPropagation(); deleteMenuItem(${cIdx},${iIdx});"
+                            title="מחק מוצר" style="border:none;background:none;cursor:pointer;color:#ff6b6b;font-size:14px;padding:2px;line-height:1;">🗑️</button>
+                    </div>
+                `).join('')}
+            </div>
             <button class="add-btn-small" style="width:100%; font-size:11px;" onclick="addMenuItem(${cIdx})">+ מוצר חדש</button>
         `).join('');
 
@@ -417,6 +427,41 @@
     function addMenuCategory() { const n = prompt("שם קטגוריה:"); if(n) { state.menu.push({cat:n, items:[]}); render(); save(); } }
     function renameCategory(cIdx, val) { if(val.trim()) { state.menu[cIdx].cat = val.trim(); save(); } }
     function renameMenuItem(cIdx, iIdx, val) { if(val.trim()) { state.menu[cIdx].items[iIdx].name = val.trim(); save(); } }
+
+    function promptRenameMenuItem(cIdx, iIdx) {
+        const item = state.menu[cIdx].items[iIdx];
+        const n = prompt("שם חדש למוצר:", item.name);
+        if (n && n.trim()) { item.name = n.trim(); save(); render(); }
+    }
+
+    function deleteMenuItem(cIdx, iIdx) {
+        const item = state.menu[cIdx].items[iIdx];
+        if (confirm(`למחוק את "${item.name}"?`)) {
+            state.menu[cIdx].items.splice(iIdx, 1);
+            save(); render();
+            document.getElementById('product-editor-area').innerHTML = '<div style="text-align:center; margin-top:100px; color:#aaa;">בחר מוצר לעריכה</div>';
+        }
+    }
+
+    function updateItemPrice(cIdx, iIdx, val) {
+        const p = parseFloat(val);
+        if (p > 0) { state.menu[cIdx].items[iIdx].price = p; save(); openEditor(cIdx, iIdx); }
+    }
+
+    let _dragSrc = null;
+    function dragItem(event, cIdx, iIdx) {
+        _dragSrc = { cIdx, iIdx };
+        event.dataTransfer.effectAllowed = 'move';
+    }
+    function dropItem(event, toCIdx) {
+        event.preventDefault();
+        if (!_dragSrc) return;
+        const { cIdx: fromC, iIdx: fromI } = _dragSrc;
+        const item = state.menu[fromC].items.splice(fromI, 1)[0];
+        state.menu[toCIdx].items.push(item);
+        _dragSrc = null;
+        save(); render();
+    }
     function addMenuItem(cIdx) { const n = prompt("שם מוצר:"); if(n) { state.menu[cIdx].items.push({id:Date.now(), name:n, price:100, recipe:[]}); render(); save(); } }
 
     function renderRecipeRows(recipe, cIdx, iIdx, tab) {
@@ -489,7 +534,13 @@
                 <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
                     <h2 style="margin:0;">${item.name}</h2>
                     <div style="text-align:left;background:#f8f8f8;padding:10px 16px;border-radius:10px;font-size:13px;">
-                        <div>מחיר מכירה: <b>${item.price} ₪</b></div>
+                        <div style="display:flex;align-items:center;gap:6px;">
+                            <span>מחיר מכירה:</span>
+                            <input type="number" value="${item.price}" min="0"
+                                onchange="updateItemPrice(${cIdx},${iIdx},this.value)"
+                                style="width:75px;border:1px solid #ddd;border-radius:6px;padding:3px 8px;font-family:'Heebo';font-weight:700;font-size:14px;color:var(--teal);">
+                            <span>₪</span>
+                        </div>
                         <div>עלות ייצור: <b style="color:var(--teal);">${displayCost.toFixed(2)} ₪</b></div>
                         <div>רווח: <b style="color:green;">${(item.price - displayCost).toFixed(2)} ₪</b></div>
                     </div>
