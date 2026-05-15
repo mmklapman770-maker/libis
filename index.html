@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ליביס – מערכת ניהול פרימיום</title>
     <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         :root {
             --teal: #008291;
@@ -114,8 +113,7 @@
 <div id="pdf-hidden-wrap"></div>
 
 <script>
-    const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRMGuK2A8KDvsNKlPoEjlTq5Dblub1d9DVmm_gJphO3W90OnRBf7zJ-IFHF-TYdDkFjxssW2ypRZ_mv/pub?output=csv';
-    const PROXY = 'https://api.allorigins.win/get?url=' + encodeURIComponent(SHEET_URL);
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbyPdaP8K6HhN7J14GwKDHIZGxV3mbNC4zW6qNb0UNvohgO435wSQJkH4tY_c2Zh8NB45g/exec';
 
     const initialMenu = [
         { cat: "פסטות ומוקרמים", items: [
@@ -182,20 +180,22 @@
         statusEl.innerText = "🔄 מסנכרן...";
         statusEl.disabled = true;
         try {
-            const response = await fetch(PROXY);
+            const response = await fetch(GAS_URL);
             const data = await response.json();
-            const csv = data.contents;
-            const rows = csv.split('\n').map(row => row.split(',').map(cell => cell.replace(/"/g, '').trim()));
+
+            // הסקריפט מחזיר מערך של אובייקטים: [{name, price, category}, ...]
+            const rows = Array.isArray(data) ? data : (data.data || data.items || []);
 
             const grouped = {};
-            rows.forEach((cols, index) => {
-                if (index === 0) return; // דלג על שורת כותרות אם יש
-                const name = cols[0];
-                const price = parseFloat(cols[1]);
-                const category = cols[2] || 'כללי';
-                if (name && !isNaN(price) && name.length > 1) {
+            rows.forEach((row, index) => {
+                // תמיכה בשני פורמטים: אובייקט JSON או מערך
+                const name     = row.name     || row[0] || '';
+                const price    = parseFloat(row.price    || row[1]) || 0;
+                const category = row.category || row[2] || 'כללי';
+                const unit     = row.unit     || row[3] || 'יח';
+                if (name && price > 0 && name.length > 1) {
                     if (!grouped[category]) grouped[category] = [];
-                    grouped[category].push({ id: `b-${index}`, name, price, unit: 'יח' });
+                    grouped[category].push({ id: `b-${index}`, name, price, unit });
                 }
             });
 
@@ -404,22 +404,21 @@
     }
 
     function generatePDF(type) {
-        const wrap = document.getElementById('pdf-hidden-wrap');
-        wrap.innerHTML = "";
-        let content = "";
-        const fontStyle = "font-family: Arial, 'Arial Hebrew', sans-serif;";
+        const fs = "font-family: 'Heebo', Arial, sans-serif; direction: rtl;";
 
-        if(type === 'invoice') {
+        let content = '';
+
+        if (type === 'invoice') {
+            if (orderItems.length === 0) { alert("אין פריטים בהזמנה."); return; }
             let total = 0;
-            if(orderItems.length === 0) { alert("אין פריטים בהזמנה."); return; }
             const rows = orderItems.map(o => {
                 const mi = state.menu.flatMap(c => c.items).find(m => m.id === o.menuId);
                 total += mi.price * o.qty;
                 return `<tr>
-                    <td style="border:1px solid #ddd;padding:10px;text-align:right;">${mi.name}${o.option?' ('+o.option+')':''}</td>
+                    <td style="border:1px solid #ddd;padding:10px;text-align:right;">${mi.name}${o.option ? ' (' + o.option + ')' : ''}</td>
                     <td style="border:1px solid #ddd;padding:10px;text-align:center;">${o.qty}</td>
                     <td style="border:1px solid #ddd;padding:10px;text-align:center;">${mi.price} ₪</td>
-                    <td style="border:1px solid #ddd;padding:10px;text-align:center;">${mi.price*o.qty} ₪</td>
+                    <td style="border:1px solid #ddd;padding:10px;text-align:center;">${mi.price * o.qty} ₪</td>
                 </tr>`;
             }).join('');
             const custName  = document.getElementById('cust-name').value  || '________';
@@ -427,41 +426,39 @@
             const custLoc   = document.getElementById('cust-loc').value   || '________';
             const custPhone = document.getElementById('cust-phone').value || '________';
             content = `
-                <div style="padding:40px; direction:rtl; ${fontStyle}">
-                    <h1 style="text-align:center; color:#008291; margin-bottom:5px;">הזמנת עבודה – ליביס</h1>
-                    <hr style="border:2px solid #c8941a; margin-bottom:20px;">
-                    <table style="width:100%; margin-bottom:20px; ${fontStyle}">
-                        <tr><td><b>לכבוד:</b> ${custName}</td><td><b>תאריך:</b> ${custDate}</td></tr>
-                        <tr><td><b>מיקום:</b> ${custLoc}</td><td><b>טלפון:</b> ${custPhone}</td></tr>
-                    </table>
-                    <table style="width:100%; border-collapse:collapse; margin-top:10px; ${fontStyle}">
-                        <thead>
-                            <tr style="background:#008291; color:white;">
-                                <th style="padding:10px; text-align:right; border:1px solid #ddd;">מוצר</th>
-                                <th style="padding:10px; text-align:center; border:1px solid #ddd;">כמות</th>
-                                <th style="padding:10px; text-align:center; border:1px solid #ddd;">מחיר יחידה</th>
-                                <th style="padding:10px; text-align:center; border:1px solid #ddd;">סה"כ</th>
-                            </tr>
-                        </thead>
-                        <tbody>${rows}</tbody>
-                    </table>
-                    <h2 style="text-align:left; margin-top:25px; color:#008291;">סה"כ לתשלום: ${total} ₪</h2>
-                </div>`;
+                <h1 style="text-align:center; color:#008291;">הזמנת עבודה – ליביס</h1>
+                <hr style="border:2px solid #c8941a; margin-bottom:20px;">
+                <table style="width:100%; margin-bottom:20px;">
+                    <tr><td><b>לכבוד:</b> ${custName}</td><td><b>תאריך:</b> ${custDate}</td></tr>
+                    <tr><td><b>מיקום:</b> ${custLoc}</td><td><b>טלפון:</b> ${custPhone}</td></tr>
+                </table>
+                <table style="width:100%; border-collapse:collapse;">
+                    <thead>
+                        <tr style="background:#008291; color:white;">
+                            <th style="padding:10px; text-align:right; border:1px solid #ddd;">מוצר</th>
+                            <th style="padding:10px; text-align:center; border:1px solid #ddd;">כמות</th>
+                            <th style="padding:10px; text-align:center; border:1px solid #ddd;">מחיר יחידה</th>
+                            <th style="padding:10px; text-align:center; border:1px solid #ddd;">סה"כ</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+                <h2 style="margin-top:25px; color:#008291;">סה"כ לתשלום: ${total} ₪</h2>`;
         } else {
             let list = {}, tc = 0;
             orderItems.forEach(o => {
                 const mi = state.menu.flatMap(c => c.items).find(m => m.id === o.menuId);
                 mi.recipe.forEach(r => {
                     const bi = state.bank.flatMap(bc => bc.items).find(b => b.id === r.bankId);
-                    if(bi) {
-                        if(!list[bi.id]) list[bi.id] = {n:bi.name, q:0, u:bi.unit||'יח', c:0};
+                    if (bi) {
+                        if (!list[bi.id]) list[bi.id] = { n: bi.name, q: 0, u: bi.unit || 'יח', c: 0 };
                         list[bi.id].q += r.qty * o.qty;
                         list[bi.id].c += (bi.price * r.qty) * o.qty;
                         tc += (bi.price * r.qty) * o.qty;
                     }
                 });
             });
-            if(Object.keys(list).length === 0) { alert("אין מרכיבים במתכונים של ההזמנה הנוכחית."); return; }
+            if (Object.keys(list).length === 0) { alert("אין מרכיבים במתכונים של ההזמנה הנוכחית."); return; }
             const rows = Object.values(list).map(i => `
                 <tr>
                     <td style="border:1px solid #ddd;padding:10px;text-align:right;">${i.n}</td>
@@ -469,31 +466,36 @@
                     <td style="border:1px solid #ddd;padding:10px;text-align:center;">${i.c.toFixed(2)} ₪</td>
                 </tr>`).join('');
             content = `
-                <div style="padding:40px; direction:rtl; ${fontStyle}">
-                    <h1 style="color:#008291;">רשימת קניות – ליביס</h1>
-                    <hr style="border:2px solid #c8941a; margin-bottom:20px;">
-                    <table style="width:100%; border-collapse:collapse; ${fontStyle}">
-                        <thead>
-                            <tr style="background:#008291; color:white;">
-                                <th style="padding:10px; text-align:right; border:1px solid #ddd;">חומר גלם</th>
-                                <th style="padding:10px; text-align:center; border:1px solid #ddd;">כמות</th>
-                                <th style="padding:10px; text-align:center; border:1px solid #ddd;">עלות</th>
-                            </tr>
-                        </thead>
-                        <tbody>${rows}</tbody>
-                    </table>
-                    <h2 style="margin-top:25px; color:#008291;">סה"כ עלות חומרים: ${tc.toFixed(2)} ₪</h2>
-                </div>`;
+                <h1 style="color:#008291;">רשימת קניות – ליביס</h1>
+                <hr style="border:2px solid #c8941a; margin-bottom:20px;">
+                <table style="width:100%; border-collapse:collapse;">
+                    <thead>
+                        <tr style="background:#008291; color:white;">
+                            <th style="padding:10px; text-align:right; border:1px solid #ddd;">חומר גלם</th>
+                            <th style="padding:10px; text-align:center; border:1px solid #ddd;">כמות</th>
+                            <th style="padding:10px; text-align:center; border:1px solid #ddd;">עלות</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+                <h2 style="margin-top:25px; color:#008291;">סה"כ עלות חומרים: ${tc.toFixed(2)} ₪</h2>`;
         }
 
-        wrap.innerHTML = content;
-        const filename = type === 'invoice' ? 'הזמנה.pdf' : 'רשימת_קניות.pdf';
-        html2pdf().from(wrap).set({
-            margin: 10,
-            filename: filename,
-            html2canvas: { scale: 2, useCORS: true, logging: false },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        }).save();
+        const win = window.open('', '_blank');
+        win.document.write(`<!DOCTYPE html>
+            <html lang="he" dir="rtl">
+            <head>
+                <meta charset="UTF-8">
+                <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;700;900&display=swap" rel="stylesheet">
+                <style>
+                    body { ${fs} padding: 40px; color: #333; }
+                    @media print { body { padding: 20px; } }
+                </style>
+            </head>
+            <body>${content}</body>
+            </html>`);
+        win.document.close();
+        win.onload = () => { win.focus(); win.print(); };
     }
 
     window.onload = render;
