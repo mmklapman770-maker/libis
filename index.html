@@ -820,7 +820,7 @@
         }
     }
 
-    window.onload = render;
+    window.onload = () => { render(); syncFromSheets(); };
 </script>
 </body>
 </html>
