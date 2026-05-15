@@ -171,15 +171,15 @@
             {id:16, name:"24 טורטיה צלוייה", price:180, recipe:[]}
         ]},
         { cat: "כריכונים ופוקצ'ות", items: [
-            {id:17, name:"24 כריכוני ביס", price:200, recipe:[]},
+            {id:17, name:"24 כריכוני ביס", price:200, options:["טונה","ביצה קשה","גבינה מלוח וירקות קלויים"], optionRecipes:{}, recipe:[]},
             {id:18, name:"24 כריכוני סביח", price:200, recipe:[]},
-            {id:19, name:"20 קוראסונים ממולאים", price:200, recipe:[]},
+            {id:19, name:"20 קוראסונים ממולאים", price:200, options:["פסטו גבינות","סביח","טונה","סלומון מעושן","סלט ביצים"], optionRecipes:{}, recipe:[]},
             {id:20, name:"24 מקלות שום עשבי תיבול", price:180, recipe:[]},
-            {id:21, name:"24 פוקצ'ות אישיות", price:180, options:["עשבי תיבול", "אנטיפסטי", "בלקני"], recipe:[]},
-            {id:22, name:"20 טורטיות ממולאות", price:180, recipe:[]}
+            {id:21, name:"24 פוקצ'ות אישיות", price:180, options:["עשבי תיבול", "אנטיפסטי", "בלקני"], optionRecipes:{}, recipe:[]},
+            {id:22, name:"20 טורטיות ממולאות", price:180, options:["סביח","גבינת שמנת ואנטיפסטי","טונה ירקות"], optionRecipes:{}, recipe:[]}
         ]},
         { cat: "דגים", items: [
-            {id:23, name:"פילה סלומון פרימיום", price:330, options:["טריאקי", "עשבי תיבול", "דבש וחרדל"], recipe:[]},
+            {id:23, name:"פילה סלומון פרימיום", price:330, options:["טריאקי", "עשבי תיבול", "דבש וחרדל"], optionRecipes:{}, recipe:[]},
             {id:24, name:"פילה מושט ברוטב מרוקאי", price:220, recipe:[]},
             {id:25, name:"25 שיפודי סלומון", price:300, recipe:[]}
         ]},
@@ -203,6 +203,37 @@
 
     let state = JSON.parse(localStorage.getItem('libis_final')) || { menu: initialMenu, bank: initialBank };
     let orderItems = [];
+
+    // מיגרציה: מוסיף optionRecipes לפריטים עם options שעוד אין להם
+    (function migrate() {
+        const ITEMS_WITH_OPTIONS = {17:["טונה","ביצה קשה","גבינה מלוח וירקות קלויים"], 19:["פסטו גבינות","סביח","טונה","סלומון מעושן","סלט ביצים"], 21:["עשבי תיבול","אנטיפסטי","בלקני"], 22:["סביח","גבינת שמנת ואנטיפסטי","טונה ירקות"], 23:["טריאקי","עשבי תיבול","דבש וחרדל"]};
+        state.menu.forEach(cat => cat.items.forEach(item => {
+            if (ITEMS_WITH_OPTIONS[item.id]) {
+                if (!item.options) item.options = ITEMS_WITH_OPTIONS[item.id];
+                if (!item.optionRecipes) {
+                    item.optionRecipes = {};
+                    item.options.forEach(opt => { if (!item.optionRecipes[opt]) item.optionRecipes[opt] = []; });
+                }
+            }
+        }));
+        save();
+    })();
+
+    let _editorTab = 'base';
+
+    function getRecipeArr(item, tab) {
+        if (tab === 'base') return item.recipe;
+        if (!item.optionRecipes) item.optionRecipes = {};
+        if (!item.optionRecipes[tab]) item.optionRecipes[tab] = [];
+        return item.optionRecipes[tab];
+    }
+
+    function calcRecipeCost(recipe) {
+        return recipe.reduce((sum, r) => {
+            const b = state.bank.flatMap(bc => bc.items).find(bi => bi.id === r.bankId);
+            return sum + (b ? b.price * r.qty : 0);
+        }, 0);
+    }
 
     function save() { localStorage.setItem('libis_final', JSON.stringify(state)); }
     function hardReset() { if(confirm("למחוק הכל ולאתחל מחדש?")) { localStorage.removeItem('libis_final'); location.reload(); } }
@@ -370,95 +401,126 @@
     function addMenuCategory() { const n = prompt("שם קטגוריה:"); if(n) { state.menu.push({cat:n, items:[]}); render(); save(); } }
     function addMenuItem(cIdx) { const n = prompt("שם מוצר:"); if(n) { state.menu[cIdx].items.push({id:Date.now(), name:n, price:100, recipe:[]}); render(); save(); } }
 
+    function renderRecipeRows(recipe, cIdx, iIdx, tab) {
+        if (recipe.length === 0) return '<p style="color:#aaa;">אין מרכיבים עדיין. הוסף מהרשימה למטה.</p>';
+        const cost = calcRecipeCost(recipe);
+        return recipe.map((r, rIdx) => {
+            const b = state.bank.flatMap(bc => bc.items).find(bi => bi.id === r.bankId);
+            const rowCost = b ? (b.price * r.qty) : 0;
+            const unit = b ? b.unit : '';
+            const step = (unit === 'קילו' || unit === 'ליטר') ? 0.1 : 1;
+            const tabEsc = tab.replace(/'/g, "\\'");
+            return `
+                <div style="display:flex; align-items:center; background:#fefefe; border:1px solid #eee; padding:10px 14px; border-radius:8px; margin-bottom:8px; gap:10px;">
+                    <span style="flex:2; font-weight:500;">${b ? b.name : 'חומר נמחק'}</span>
+                    <div style="display:flex; align-items:center; gap:6px; background:#f0f0f0; border-radius:50px; padding:4px 8px;">
+                        <button onclick="updateRecipeQty(${cIdx},${iIdx},${rIdx},${Math.max(0,Math.round((r.qty-step)*100)/100)},'${tabEsc}')"
+                            style="width:28px;height:28px;border-radius:50%;border:none;background:var(--teal);color:white;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;">−</button>
+                        <span style="min-width:50px;text-align:center;font-weight:700;">${r.qty} ${unit}</span>
+                        <button onclick="updateRecipeQty(${cIdx},${iIdx},${rIdx},${Math.round((r.qty+step)*100)/100},'${tabEsc}')"
+                            style="width:28px;height:28px;border-radius:50%;border:none;background:var(--teal);color:white;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;">+</button>
+                    </div>
+                    <span style="min-width:70px;text-align:center;font-weight:700;color:var(--teal);">${rowCost.toFixed(2)} ₪</span>
+                    <button class="delete-btn" onclick="removeRecipeRow(${cIdx},${iIdx},${rIdx},'${tabEsc}')">✖</button>
+                </div>`;
+        }).join('') + `
+            <div style="display:flex;justify-content:space-between;align-items:center;background:var(--teal-light);border:2px solid var(--teal);padding:12px 15px;border-radius:8px;margin-top:10px;font-weight:900;">
+                <span>סה"כ עלות:</span>
+                <span style="color:var(--teal);font-size:1.15em;">${cost.toFixed(2)} ₪</span>
+            </div>`;
+    }
+
     function openEditor(cIdx, iIdx) {
         document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
         const item = state.menu[cIdx].items[iIdx];
         document.getElementById(`side-${item.id}`).classList.add('active');
         const area = document.getElementById('product-editor-area');
 
+        if (!item.options) _editorTab = 'base';
+        else if (_editorTab !== 'base' && !item.options.includes(_editorTab)) _editorTab = 'base';
+
         const draw = () => {
-            let cost = 0;
-            item.recipe.forEach(r => {
-                const b = state.bank.flatMap(bc => bc.items).find(bi => bi.id === r.bankId);
-                if(b) cost += (b.price * r.qty);
-            });
+            const baseCost = calcRecipeCost(item.recipe);
+            const hasOptions = !!(item.options && item.options.length);
+
+            // עלות כוללת = בסיס + אופציה נבחרת (לתצוגת רווח)
+            const displayOptCost = (hasOptions && _editorTab !== 'base')
+                ? calcRecipeCost(getRecipeArr(item, _editorTab)) : 0;
+            const displayCost = baseCost + displayOptCost;
+
+            const tabsHtml = hasOptions ? `
+                <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px;padding-bottom:14px;border-bottom:2px solid #eee;">
+                    <button onclick="_setTab('base')" style="padding:7px 14px;border-radius:50px;border:none;cursor:pointer;font-family:'Heebo';font-weight:700;font-size:13px;background:${_editorTab==='base'?'var(--teal)':'#f0f0f0'};color:${_editorTab==='base'?'white':'#333'};">
+                        🍽️ בסיס משותף
+                    </button>
+                    ${item.options.map(opt => {
+                        const oc = calcRecipeCost(getRecipeArr(item, opt));
+                        return `<button onclick="_setTab('${opt.replace(/'/g,"\\'")}\')" style="padding:7px 14px;border-radius:50px;border:none;cursor:pointer;font-family:'Heebo';font-weight:700;font-size:13px;background:${_editorTab===opt?'var(--gold)':'#f0f0f0'};color:${_editorTab===opt?'white':'#333'};">
+                            ${opt}${oc>0?` <small>(${oc.toFixed(0)}₪)</small>`:''}
+                        </button>`;
+                    }).join('')}
+                </div>` : '';
+
+            const currentRecipe = getRecipeArr(item, _editorTab);
+            const tabEsc = _editorTab.replace(/'/g, "\\'");
+
+            const noteHtml = hasOptions && _editorTab !== 'base'
+                ? `<p style="color:#888;font-size:12px;margin-bottom:10px;">💡 חומרים כאן מתווספים <b>על גבי הבסיס המשותף</b> עבור מילוי זה.</p>` : '';
 
             area.innerHTML = `
-                <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
                     <h2 style="margin:0;">${item.name}</h2>
-                    <div style="text-align:left;">
-                        <span style="font-size:0.9em; color:#666;">מחיר מכירה:</span> <b>${item.price} ₪</b><br>
-                        <span style="font-size:0.9em; color:#666;">עלות ייצור:</span> <b style="color:var(--teal);">${cost.toFixed(2)} ₪</b><br>
-                        <span style="font-size:0.9em; color:#666;">רווח יח':</span> <b style="color:green;">${(item.price - cost).toFixed(2)} ₪</b>
+                    <div style="text-align:left;background:#f8f8f8;padding:10px 16px;border-radius:10px;font-size:13px;">
+                        <div>מחיר מכירה: <b>${item.price} ₪</b></div>
+                        <div>עלות ייצור: <b style="color:var(--teal);">${displayCost.toFixed(2)} ₪</b></div>
+                        <div>רווח: <b style="color:green;">${(item.price - displayCost).toFixed(2)} ₪</b></div>
                     </div>
                 </div>
-                <hr style="margin:20px 0; border:0; border-top:1px solid #eee;">
-
-                <h4>מרכיבי המתכון:</h4>
-                <div id="recipe-list">
-                    ${item.recipe.length === 0 ? '<p style="color:#aaa;">אין מרכיבים במתכון עדיין.</p>' : ''}
-                    ${item.recipe.map((r, rIdx) => {
-                        const b = state.bank.flatMap(bc => bc.items).find(bi => bi.id === r.bankId);
-                        const rowCost = b ? (b.price * r.qty) : 0;
-                        const unit = b ? b.unit : '';
-                        return `
-                            <div style="display:flex; justify-content:space-between; align-items:center; background:#fefefe; border:1px solid #eee; padding:10px 14px; border-radius:8px; margin-bottom:8px; gap:10px;">
-                                <span style="flex:2; font-weight:500;">${b ? b.name : 'חומר נמחק'}</span>
-                                <div style="display:flex; align-items:center; gap:6px; background:#f0f0f0; border-radius:50px; padding:4px 8px;">
-                                    <button onclick="updateRecipeQty(${cIdx},${iIdx},${rIdx},${Math.max(0, r.qty - (unit==='קילו'||unit==='ליטר' ? 0.1 : 1))})"
-                                        style="width:28px;height:28px;border-radius:50%;border:none;background:var(--teal);color:white;font-size:18px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;">−</button>
-                                    <span style="min-width:50px; text-align:center; font-weight:700;">${r.qty} ${unit}</span>
-                                    <button onclick="updateRecipeQty(${cIdx},${iIdx},${rIdx},${r.qty + (unit==='קילו'||unit==='ליטר' ? 0.1 : 1)})"
-                                        style="width:28px;height:28px;border-radius:50%;border:none;background:var(--teal);color:white;font-size:18px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;">+</button>
-                                </div>
-                                <span style="min-width:70px; text-align:center; font-weight:700; color:var(--teal);">${rowCost.toFixed(2)} ₪</span>
-                                <button class="delete-btn" onclick="removeRecipeRow(${cIdx}, ${iIdx}, ${rIdx})">✖</button>
-                            </div>
-                        `;
-                    }).join('')}
-                    ${item.recipe.length > 0 ? `
-                    <div style="display:flex; justify-content:flex-start; align-items:center; background:var(--teal-light); border:2px solid var(--teal); padding:12px 15px; border-radius:8px; margin-top:10px; font-weight:900; font-size:1.05em;">
-                        <span style="flex:1;">סה"כ עלות ייצור:</span>
-                        <span style="color:var(--teal); font-size:1.2em;">${cost.toFixed(2)} ₪</span>
-                    </div>` : ''}
-                </div>
-
-                <div style="margin-top:30px; padding:20px; background:#f0f7f8; border-radius:12px; display:flex; gap:10px; align-items:center;">
-                    <select id="bank-select-tool" style="flex:1; padding:10px; border-radius:8px; border:1px solid #ccc; font-family:'Heebo';">
+                ${tabsHtml}
+                ${noteHtml}
+                <div id="recipe-list">${renderRecipeRows(currentRecipe, cIdx, iIdx, _editorTab)}</div>
+                <div style="margin-top:20px;padding:16px;background:#f0f7f8;border-radius:12px;display:flex;gap:10px;align-items:center;">
+                    <select id="bank-select-tool" style="flex:1;padding:10px;border-radius:8px;border:1px solid #ccc;font-family:'Heebo';">
                         <option value="">-- בחר חומר מהבנק --</option>
                         ${state.bank.map(cat => `
                             <optgroup label="${cat.cat}">
-                                ${cat.items.map(bi => `<option value="${bi.id}">${bi.name} (${bi.unit || 'יח'})</option>`).join('')}
-                            </optgroup>
-                        `).join('')}
+                                ${cat.items.map(bi => `<option value="${bi.id}">${bi.name} (${bi.unit||'יח'})</option>`).join('')}
+                            </optgroup>`).join('')}
                     </select>
-                    <button class="add-btn-small" style="margin:0; padding:12px 25px;" onclick="addMaterialToRecipe(${cIdx}, ${iIdx})">הוסף למתכון</button>
-                </div>
-            `;
+                    <button class="add-btn-small" style="margin:0;padding:12px 20px;" onclick="addMaterialToRecipe(${cIdx},${iIdx},'${tabEsc}')">הוסף</button>
+                </div>`;
         };
+
+        window._setTab = (tab) => { _editorTab = tab; draw(); };
         draw();
     }
 
-    window.addMaterialToRecipe = function(cIdx, iIdx) {
+    window.addMaterialToRecipe = function(cIdx, iIdx, tab) {
         const select = document.getElementById('bank-select-tool');
         const rawVal = select.value;
         const bid = isNaN(rawVal) ? rawVal : parseInt(rawVal);
-        if(!bid) return;
-        state.menu[cIdx].items[iIdx].recipe.push({ bankId: bid, qty: 1 });
+        if (!bid) return;
+        const item = state.menu[cIdx].items[iIdx];
+        getRecipeArr(item, tab).push({ bankId: bid, qty: 1 });
         save();
+        _editorTab = tab;
         openEditor(cIdx, iIdx);
     };
 
-    window.updateRecipeQty = function(cIdx, iIdx, rIdx, val) {
+    window.updateRecipeQty = function(cIdx, iIdx, rIdx, val, tab) {
         const rounded = Math.round(parseFloat(val) * 100) / 100;
-        state.menu[cIdx].items[iIdx].recipe[rIdx].qty = Math.max(0, rounded) || 0;
+        const item = state.menu[cIdx].items[iIdx];
+        getRecipeArr(item, tab)[rIdx].qty = Math.max(0, rounded) || 0;
         save();
+        _editorTab = tab;
         openEditor(cIdx, iIdx);
     };
 
-    window.removeRecipeRow = function(cIdx, iIdx, rIdx) {
-        state.menu[cIdx].items[iIdx].recipe.splice(rIdx, 1);
+    window.removeRecipeRow = function(cIdx, iIdx, rIdx, tab) {
+        const item = state.menu[cIdx].items[iIdx];
+        getRecipeArr(item, tab).splice(rIdx, 1);
         save();
+        _editorTab = tab;
         openEditor(cIdx, iIdx);
     };
 
@@ -476,15 +538,24 @@
         } catch(e) { console.warn('שגיאה בשמירה לשיטס', e); }
     }
 
+    function getOrderItemRecipes(mi, o) {
+        // מחזיר את כל המתכונים הרלוונטיים: בסיס + אופציה (אם נבחרה)
+        const recipes = [...mi.recipe];
+        if (o.option && mi.optionRecipes && mi.optionRecipes[o.option]) {
+            recipes.push(...mi.optionRecipes[o.option]);
+        }
+        return recipes;
+    }
+
     function updateStats() {
         let rev = 0, cost = 0;
         orderItems.forEach(o => {
             const mi = state.menu.flatMap(c => c.items).find(m => m.id === o.menuId);
-            if(!mi) return;
+            if (!mi) return;
             rev += mi.price * o.qty;
-            mi.recipe.forEach(r => {
+            getOrderItemRecipes(mi, o).forEach(r => {
                 const bi = state.bank.flatMap(bc => bc.items).find(b => b.id === r.bankId);
-                if(bi) cost += (bi.price * r.qty) * o.qty;
+                if (bi) cost += (bi.price * r.qty) * o.qty;
             });
         });
         document.getElementById('stat-total-rev').innerText = rev + ' ₪';
@@ -619,12 +690,13 @@
             let list = {}, tc = 0;
             orderItems.forEach(o => {
                 const mi = state.menu.flatMap(c => c.items).find(m => m.id === o.menuId);
-                mi.recipe.forEach(r => {
+                getOrderItemRecipes(mi, o).forEach(r => {
                     const bi = state.bank.flatMap(bc => bc.items).find(b => b.id === r.bankId);
                     if (bi) {
-                        if (!list[bi.id]) list[bi.id] = { n: bi.name, q: 0, u: bi.unit || 'יח', c: 0 };
-                        list[bi.id].q += r.qty * o.qty;
-                        list[bi.id].c += (bi.price * r.qty) * o.qty;
+                        const key = bi.id + (o.option ? '_' + o.option : '');
+                        if (!list[key]) list[key] = { n: bi.name + (o.option ? ` (${o.option})` : ''), q: 0, u: bi.unit || 'יח', c: 0 };
+                        list[key].q += r.qty * o.qty;
+                        list[key].c += (bi.price * r.qty) * o.qty;
                         tc += (bi.price * r.qty) * o.qty;
                     }
                 });
