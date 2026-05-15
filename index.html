@@ -388,9 +388,22 @@
 
         const sidebar = document.getElementById('sidebar-menu-list');
         sidebar.innerHTML = state.menu.map((cat, cIdx) => `
-            <div style="font-weight:900; color:#888; font-size:12px; margin-top:15px;">${cat.cat}</div>
+            <div style="display:flex; align-items:center; gap:4px; margin-top:15px; margin-bottom:2px;">
+                <input value="${cat.cat}"
+                    onchange="renameCategory(${cIdx}, this.value)"
+                    style="font-weight:900; color:#888; font-size:12px; border:none; background:transparent; width:100%; padding:2px 4px; border-radius:4px; font-family:'Heebo';"
+                    onfocus="this.style.background='#f0f0f0'; this.style.border='1px solid #ddd';"
+                    onblur="this.style.background='transparent'; this.style.border='none';">
+            </div>
             ${cat.items.map((item, iIdx) => `
-                <div class="sidebar-item" id="side-${item.id}" onclick="openEditor(${cIdx}, ${iIdx})">${item.name}</div>
+                <div class="sidebar-item" id="side-${item.id}" style="display:flex; align-items:center; gap:4px; padding:6px 8px;">
+                    <input value="${item.name}"
+                        onchange="renameMenuItem(${cIdx}, ${iIdx}, this.value)"
+                        onclick="event.stopPropagation(); openEditor(${cIdx}, ${iIdx});"
+                        style="flex:1; border:none; background:transparent; font-size:14px; font-family:'Heebo'; cursor:pointer; padding:2px 4px; border-radius:4px; color:inherit;"
+                        onfocus="this.style.background='white'; this.style.border='1px solid #ddd'; this.style.cursor='text';"
+                        onblur="this.style.background='transparent'; this.style.border='none'; this.style.cursor='pointer';">
+                </div>
             `).join('')}
             <button class="add-btn-small" style="width:100%; font-size:11px;" onclick="addMenuItem(${cIdx})">+ מוצר חדש</button>
         `).join('');
@@ -403,6 +416,8 @@
     function addBankItem(cIdx) { state.bank[cIdx].items.push({id:Date.now(), name:"חדש", unit:"יח", price:0}); render(); save(); }
     function addBankCategory() { const n = prompt("שם קטגוריה:"); if(n) { state.bank.push({cat:n, items:[]}); render(); save(); } }
     function addMenuCategory() { const n = prompt("שם קטגוריה:"); if(n) { state.menu.push({cat:n, items:[]}); render(); save(); } }
+    function renameCategory(cIdx, val) { if(val.trim()) { state.menu[cIdx].cat = val.trim(); save(); } }
+    function renameMenuItem(cIdx, iIdx, val) { if(val.trim()) { state.menu[cIdx].items[iIdx].name = val.trim(); save(); } }
     function addMenuItem(cIdx) { const n = prompt("שם מוצר:"); if(n) { state.menu[cIdx].items.push({id:Date.now(), name:n, price:100, recipe:[]}); render(); save(); } }
 
     function renderRecipeRows(recipe, cIdx, iIdx, tab) {
