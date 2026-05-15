@@ -234,36 +234,66 @@
         document.getElementById('btn-recipes').classList.toggle('active', mode === 'recipes');
     }
 
-    function addToOrder(id) { orderItems.push({menuId: id, option: "", qty: 1}); render(); }
+    function addToOrder(id) { orderItems.push({menuId: id, option: "", note: "", qty: 1}); render(); }
     function removeFromOrder(idx) { orderItems.splice(idx, 1); render(); }
-    function updateOrderQty(idx, val) { orderItems[idx].qty = parseInt(val) || 1; updateStats(); }
-    function updateOrderOpt(idx, val) { orderItems[idx].option = val; }
+    function updateOrderQty(idx, delta) {
+        orderItems[idx].qty = Math.max(1, (orderItems[idx].qty || 1) + delta);
+        render();
+    }
+    function updateOrderOpt(idx, val) { orderItems[idx].option = val; save && save(); }
+    function updateOrderNote(idx, val) { orderItems[idx].note = val; }
 
     function render() {
         const orderCont = document.getElementById('order-products-container');
         orderCont.innerHTML = state.menu.map(cat => `
             <div class="card">
                 <h3 style="color:var(--teal); margin-top:0;">${cat.cat}</h3>
-                ${cat.items.map(item => `
-                    <div style="padding:10px 0; border-bottom:1px solid #f0f0f0;">
-                        <div style="display:flex; justify-content:space-between;">
-                            <b>${item.name} (${item.price} ₪)</b>
-                            <button class="add-btn-small" style="margin:0;" onclick="addToOrder(${item.id})">+ הוסף</button>
-                        </div>
-                        ${orderItems.map((o, idx) => o.menuId === item.id ? `
-                            <div style="display:flex; gap:10px; align-items:center; background:#f9f9f9; padding:8px; border-radius:8px; margin-top:5px;">
-                                כמות: <input type="number" style="width:50px;" value="${o.qty}" onchange="updateOrderQty(${idx}, this.value)">
-                                ${item.options ? `
-                                    <select onchange="updateOrderOpt(${idx}, this.value)" style="font-family:'Heebo';">
-                                        <option value="">בחר סוג</option>
-                                        ${item.options.map(opt => `<option value="${opt}" ${o.option===opt?'selected':''}>${opt}</option>`).join('')}
-                                    </select>
-                                ` : ''}
-                                <button class="delete-btn" onclick="removeFromOrder(${idx})">✖</button>
+                ${cat.items.map(item => {
+                    const activeOrders = orderItems.map((o, idx) => ({o, idx})).filter(({o}) => o.menuId === item.id);
+                    return `
+                    <div style="padding:12px 0; border-bottom:1px solid #f0f0f0;">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <div>
+                                <b style="font-size:15px;">${item.name}</b>
+                                <span style="color:#888; font-size:13px; margin-right:6px;">${item.price} ₪</span>
                             </div>
-                        ` : '').join('')}
-                    </div>
-                `).join('')}
+                            <button class="add-btn-small" style="margin:0;" onclick="addToOrder(${item.id})">+ הוסף להזמנה</button>
+                        </div>
+                        ${activeOrders.map(({o, idx}) => `
+                            <div style="background:#f0f8f9; border:1px solid #c5e8ec; border-radius:10px; padding:12px 14px; margin-top:8px;">
+                                <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                                    <div style="display:flex; align-items:center; gap:6px; background:white; border-radius:50px; padding:4px 8px; border:1px solid #ddd;">
+                                        <button onclick="updateOrderQty(${idx},-1)"
+                                            style="width:28px;height:28px;border-radius:50%;border:none;background:var(--teal);color:white;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;">−</button>
+                                        <span style="min-width:30px;text-align:center;font-weight:900;font-size:16px;">${o.qty}</span>
+                                        <button onclick="updateOrderQty(${idx},1)"
+                                            style="width:28px;height:28px;border-radius:50%;border:none;background:var(--teal);color:white;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;">+</button>
+                                    </div>
+                                    <span style="font-weight:700; color:var(--teal);">${item.price * o.qty} ₪</span>
+                                    <button class="delete-btn" style="margin-right:auto;" onclick="removeFromOrder(${idx})">✖ הסר</button>
+                                </div>
+                                ${item.options ? `
+                                <div style="margin-top:10px;">
+                                    <div style="font-size:12px; color:#666; margin-bottom:6px; font-weight:700;">בחר סוג:</div>
+                                    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                                        ${item.options.map(opt => `
+                                            <label style="display:flex; align-items:center; gap:6px; background:${o.option===opt?'var(--teal)':'white'}; color:${o.option===opt?'white':'#333'}; border:2px solid ${o.option===opt?'var(--teal)':'#ddd'}; border-radius:50px; padding:6px 14px; cursor:pointer; font-size:13px; font-weight:${o.option===opt?'700':'400'}; transition:0.2s;">
+                                                <input type="radio" name="opt-${idx}" value="${opt}" ${o.option===opt?'checked':''} onchange="updateOrderOpt(${idx},'${opt}'); render();" style="display:none;">
+                                                ${opt}
+                                            </label>
+                                        `).join('')}
+                                    </div>
+                                </div>` : ''}
+                                <div style="margin-top:10px;">
+                                    <input type="text" placeholder="הערה למוצר זה (אופציונלי)..."
+                                        value="${o.note || ''}"
+                                        onchange="updateOrderNote(${idx}, this.value)"
+                                        style="width:100%; padding:8px 12px; border:1px solid #ddd; border-radius:8px; font-family:'Heebo'; font-size:13px; box-sizing:border-box; background:white;">
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>`;
+                }).join('')}
             </div>
         `).join('');
 
@@ -465,9 +495,10 @@
                 const mi = state.menu.flatMap(c => c.items).find(m => m.id === o.menuId);
                 const lineTotal = mi.price * o.qty;
                 total += lineTotal;
+                const details = [o.option, o.note].filter(Boolean).join(' | ');
                 return `<tr>
                     <td>${idx + 1}</td>
-                    <td>${mi.name}${o.option ? ' <span style="color:#888;font-size:11px;">(${o.option})</span>' : ''}</td>
+                    <td>${mi.name}${details ? `<br><span style="color:#888;font-size:11px;">${details}</span>` : ''}</td>
                     <td class="td-center">${o.qty}</td>
                     <td class="td-center">${mi.price.toLocaleString()} ₪</td>
                     <td class="td-center" style="font-weight:700;">${lineTotal.toLocaleString()} ₪</td>
