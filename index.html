@@ -337,6 +337,7 @@
                     ${item.recipe.length === 0 ? '<p style="color:#aaa;">אין מרכיבים במתכון עדיין.</p>' : ''}
                     ${item.recipe.map((r, rIdx) => {
                         const b = state.bank.flatMap(bc => bc.items).find(bi => bi.id === r.bankId);
+                        const rowCost = b ? (b.price * r.qty) : 0;
                         return `
                             <div style="display:flex; justify-content:space-between; align-items:center; background:#fefefe; border:1px solid #eee; padding:10px; border-radius:8px; margin-bottom:8px;">
                                 <span style="flex:2;">${b ? b.name : 'חומר נמחק'}</span>
@@ -344,10 +345,16 @@
                                     כמות: <input type="number" step="0.1" style="width:60px; padding:4px;" value="${r.qty}" onchange="updateRecipeQty(${cIdx}, ${iIdx}, ${rIdx}, this.value)">
                                     <span style="font-size:0.8em;">${b ? b.unit : ''}</span>
                                 </div>
+                                <span style="min-width:70px; text-align:center; font-weight:700; color:var(--teal);">${rowCost.toFixed(2)} ₪</span>
                                 <button class="delete-btn" onclick="removeRecipeRow(${cIdx}, ${iIdx}, ${rIdx})">✖</button>
                             </div>
                         `;
                     }).join('')}
+                    ${item.recipe.length > 0 ? `
+                    <div style="display:flex; justify-content:flex-start; align-items:center; background:var(--teal-light); border:2px solid var(--teal); padding:12px 15px; border-radius:8px; margin-top:10px; font-weight:900; font-size:1.05em;">
+                        <span style="flex:1;">סה"כ עלות ייצור:</span>
+                        <span style="color:var(--teal); font-size:1.2em;">${cost.toFixed(2)} ₪</span>
+                    </div>` : ''}
                 </div>
 
                 <div style="margin-top:30px; padding:20px; background:#f0f7f8; border-radius:12px; display:flex; gap:10px; align-items:center;">
