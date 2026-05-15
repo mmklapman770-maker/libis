@@ -51,6 +51,38 @@
         .add-btn-small { background: var(--teal-light); color: var(--teal); border: none; padding: 8px 15px; border-radius: 50px; cursor: pointer; font-weight: 700; margin-bottom: 10px; font-family: 'Heebo'; }
 
         #pdf-hidden-wrap { position: fixed; left: -9999px; top: 0; background: white; width: 210mm; direction: rtl; }
+
+        /* ===== מובייל ===== */
+        @media (max-width: 768px) {
+            .header { padding: 15px 10px; }
+            .header img { height: 50px; }
+            .sync-status { font-size: 11px; padding: 5px 12px; }
+
+            .nav-main { gap: 6px; padding: 10px 8px; flex-wrap: wrap; }
+            .nav-btn { padding: 9px 14px; font-size: 13px; }
+
+            .container { padding: 0 12px 170px 12px; margin: 15px auto; }
+            .card { padding: 15px; }
+
+            .order-info-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+            .order-info-grid input { padding: 9px; font-size: 13px; }
+
+            .bank-grid { grid-template-columns: 1fr; }
+
+            .mgmt-layout { flex-direction: column; height: auto; }
+            .sidebar { width: 100%; height: auto; max-height: 220px; }
+
+            .summary-footer { padding: 10px 12px; flex-wrap: wrap; gap: 8px; justify-content: center; }
+            .summary-footer > div:first-child { width: 100%; text-align: center; font-size: 14px; }
+            .btn-export-main { padding: 10px 16px; font-size: 13px; }
+
+            .manage-sub-nav { flex-wrap: wrap; }
+        }
+
+        @media (max-width: 480px) {
+            .order-info-grid { grid-template-columns: 1fr; }
+            .nav-btn { flex: 1; text-align: center; font-size: 12px; padding: 8px 10px; }
+        }
     </style>
 </head>
 <body>
@@ -331,8 +363,8 @@
         updateStats();
     }
 
-    function updateBank(cIdx, mIdx, f, v) { state.bank[cIdx].items[mIdx][f] = f==='price'?parseFloat(v):v; save(); updateStats(); }
-    function deleteBank(cIdx, mIdx) { state.bank[cIdx].items.splice(mIdx, 1); render(); save(); }
+    function updateBank(cIdx, mIdx, f, v) { state.bank[cIdx].items[mIdx][f] = f==='price'?parseFloat(v):v; save(); updateStats(); pushBankToSheets(); }
+    function deleteBank(cIdx, mIdx) { state.bank[cIdx].items.splice(mIdx, 1); render(); save(); pushBankToSheets(); }
     function addBankItem(cIdx) { state.bank[cIdx].items.push({id:Date.now(), name:"חדש", unit:"יח", price:0}); render(); save(); }
     function addBankCategory() { const n = prompt("שם קטגוריה:"); if(n) { state.bank.push({cat:n, items:[]}); render(); save(); } }
     function addMenuCategory() { const n = prompt("שם קטגוריה:"); if(n) { state.menu.push({cat:n, items:[]}); render(); save(); } }
@@ -429,6 +461,20 @@
         save();
         openEditor(cIdx, iIdx);
     };
+
+    async function pushBankToSheets() {
+        const allItems = state.bank.flatMap(cat =>
+            cat.items.map(item => ({ name: item.name, price: item.price, category: cat.cat, unit: item.unit || 'יח' }))
+        );
+        try {
+            await fetch(GAS_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'updateBank', data: allItems })
+            });
+        } catch(e) { console.warn('שגיאה בשמירה לשיטס', e); }
+    }
 
     function updateStats() {
         let rev = 0, cost = 0;
