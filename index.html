@@ -548,12 +548,12 @@ function saveCurrentOrder() {
                         </div>
                         <div style="font-size:12px;color:#aaa;margin-top:4px;">נשמרה ב־${order.createdAt} | ${itemCount} פריטים | סה"כ ${(order.total||0).toLocaleString()} ₪</div>
                     </div>
-                    <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                        <button class="add-btn-small" style="margin:0;background:var(--teal);color:white;" onclick="loadSavedOrder(${order.id})">✏️ טען לעריכה</button>
-                        <button class="add-btn-small" style="margin:0;background:#7b5ea7;color:white;" onclick="duplicateSavedOrder(${order.id})">📋 שכפל</button>
-                        <button class="add-btn-small" style="margin:0;background:#444;color:white;" onclick="loadAndExport(${order.id},'invoice')">📄 הפק PDF</button>
-                        <button class="add-btn-small" style="margin:0;background:#2e7d32;color:white;" onclick="loadAndExport(${order.id},'shopping')">🛒 רשימת קניות</button>
-                        <button class="delete-btn" style="margin:0;" onclick="deleteSavedOrder(${order.id})">🗑️ מחק</button>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                        <button class="btn-export-main" style="background:var(--teal);" onclick="loadSavedOrder(${order.id})"><span class="btn-icon">✏️</span><span class="btn-text"> טען לעריכה</span></button>
+                        <button class="btn-export-main" style="background:#7b5ea7;" onclick="duplicateSavedOrder(${order.id})"><span class="btn-icon">📋</span><span class="btn-text"> שכפל</span></button>
+                        <button class="btn-export-main" style="background:#37474f;" onclick="loadAndExport(${order.id},'invoice')"><span class="btn-icon">📄</span><span class="btn-text"> הפק PDF</span></button>
+                        <button class="btn-export-main" style="background:#2e7d32;" onclick="loadAndExport(${order.id},'shopping')"><span class="btn-icon">🛒</span><span class="btn-text"> רשימת קניות</span></button>
+                        <button class="btn-export-main" style="background:#e53935;" onclick="deleteSavedOrder(${order.id})"><span class="btn-icon">🗑️</span><span class="btn-text"> מחק</span></button>
                     </div>
                 </div>
             </div>`;
