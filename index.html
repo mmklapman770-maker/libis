@@ -227,6 +227,10 @@
             <label>סיסמא</label>
             <input type="password" id="login-pass" placeholder="סיסמא" autocomplete="current-password" onkeydown="if(event.key==='Enter') doLogin()">
         </div>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#666;cursor:pointer;margin-bottom:4px;justify-content:center;">
+            <input type="checkbox" id="remember-me" style="width:16px;height:16px;cursor:pointer;accent-color:var(--teal);">
+            זכור אותי במכשיר זה
+        </label>
         <button class="login-btn" onclick="doLogin()">כניסה →</button>
         <div class="login-error" id="login-error"></div>
     </div>
@@ -338,11 +342,13 @@
     };
 
     function doLogin() {
-        const user = document.getElementById('login-user').value.trim();
-        const pass = document.getElementById('login-pass').value;
+        const user  = document.getElementById('login-user').value.trim();
+        const pass  = document.getElementById('login-pass').value;
+        const remember = document.getElementById('remember-me').checked;
         const errEl = document.getElementById('login-error');
         if (USERS[user] && USERS[user] === pass) {
-            sessionStorage.setItem('libis_auth', '1');
+            if (remember) localStorage.setItem('libis_auth', '1');
+            else          sessionStorage.setItem('libis_auth', '1');
             document.getElementById('login-overlay').classList.add('hidden');
             document.getElementById('app-content').style.display = 'block';
             errEl.textContent = '';
@@ -353,8 +359,8 @@
         }
     }
 
-    // בדיקה אם כבר מחובר (אותו session)
-    if (sessionStorage.getItem('libis_auth') === '1') {
+    // בדיקה אם כבר מחובר
+    if (localStorage.getItem('libis_auth') === '1' || sessionStorage.getItem('libis_auth') === '1') {
         document.getElementById('login-overlay').classList.add('hidden');
         document.getElementById('app-content').style.display = 'block';
     }
