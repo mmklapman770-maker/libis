@@ -6,6 +6,8 @@
     <title>ליביס – מערכת ניהול פרימיום</title>
     <link rel="icon" type="image/png" href="libis-logo.png">
     <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
     <style>
         :root {
             --teal: #008291;
@@ -145,6 +147,20 @@
 <div id="pdf-hidden-wrap"></div>
 
 <script>
+    // ===== פיירבייס =====
+    const firebaseConfig = {
+        apiKey: "AIzaSyDKUC-BJaPXAeiLkpGNYVrk-kJlk9oADEg",
+        authDomain: "libis-e69a8.firebaseapp.com",
+        databaseURL: "https://libis-e69a8-default-rtdb.firebaseio.com",
+        projectId: "libis-e69a8",
+        storageBucket: "libis-e69a8.firebasestorage.app",
+        messagingSenderId: "41659000091",
+        appId: "1:41659000091:web:e15414c6497dc981af1fbe"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    let _fbSaving = false;
+
     const GAS_URL = 'https://script.google.com/macros/s/AKfycbyPdaP8K6HhN7J14GwKDHIZGxV3mbNC4zW6qNb0UNvohgO435wSQJkH4tY_c2Zh8NB45g/exec';
 
     const initialMenu = [
@@ -235,8 +251,14 @@
         }, 0);
     }
 
-    function save() { localStorage.setItem('libis_final', JSON.stringify(state)); }
-    function hardReset() { if(confirm("למחוק הכל ולאתחל מחדש?")) { localStorage.removeItem('libis_final'); location.reload(); } }
+    function save() {
+        localStorage.setItem('libis_final', JSON.stringify(state));
+        _fbSaving = true;
+        db.ref('libis/state').set(state)
+            .catch(e => console.warn('שגיאת שמירה לפיירבייס:', e))
+            .finally(() => setTimeout(() => { _fbSaving = false; }, 500));
+    }
+    function hardReset() { if(confirm("למחוק הכל ולאתחל מחדש?")) { localStorage.removeItem('libis_final'); db.ref('libis/state').remove(); location.reload(); } }
 
     async function syncFromSheets() {
         const statusEl = document.getElementById('sync-info');
@@ -870,7 +892,32 @@
         }
     }
 
-    window.onload = () => { render(); syncFromSheets(); };
+    window.onload = async () => {
+        // טוען מפיירבייס — אם יש נתונים שם, הם מנצחים את ה-localStorage
+        try {
+            const snap = await db.ref('libis/state').once('value');
+            const fbState = snap.val();
+            if (fbState && fbState.menu) {
+                state = fbState;
+                localStorage.setItem('libis_final', JSON.stringify(state));
+            }
+        } catch(e) {
+            console.warn('לא הצלחתי לטעון מפיירבייס, עובד עם נתונים מקומיים');
+        }
+        render();
+        syncFromSheets();
+
+        // מאזין לשינויים ממכשירים אחרים בזמן אמת
+        db.ref('libis/state').on('value', snap => {
+            if (_fbSaving) return; // מונע לולאה — השינוי שלנו עצמנו
+            const s = snap.val();
+            if (s && s.menu) {
+                state = s;
+                localStorage.setItem('libis_final', JSON.stringify(state));
+                render();
+            }
+        });
+    };
 </script>
 </body>
 </html>
