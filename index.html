@@ -67,10 +67,15 @@
         .order-info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
         .order-info-grid input { padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-family: 'Heebo'; }
 
-        .bank-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; }
-        .bank-item-card { background: white; padding: 15px; border-radius: var(--radius); border: 1px solid #edf2f7; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
-        .bank-item-card input { border: 1px solid transparent; padding: 5px; width: 100%; border-radius: 4px; font-family: 'Heebo'; box-sizing: border-box; }
-        .bank-item-card input:hover { border-color: #eee; }
+        .bank-grid { display: flex; flex-direction: column; }
+        .bank-item-row { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid #f3f3f3; }
+        .bank-item-row:last-child { border-bottom: none; }
+        .bank-input { border: 1px solid transparent; padding: 4px 7px; border-radius: 6px; font-family: 'Heebo'; font-size: 13px; background: transparent; transition: 0.15s; }
+        .bank-input:hover, .bank-input:focus { border-color: #ddd; background: #f9f9f9; outline: none; }
+        .bank-input-name { flex: 1; }
+        .bank-input-unit { width: 55px; text-align: center; }
+        .bank-input-price { width: 70px; text-align: center; }
+        .bank-price-label { font-size: 12px; color: #aaa; }
 
         .mgmt-layout { display: flex; gap: 20px; height: 70vh; }
         .sidebar { width: 300px; background: white; border-radius: var(--radius); padding: 15px; overflow-y: auto; box-shadow: var(--shadow); }
@@ -134,7 +139,8 @@
             .order-info-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
             .order-info-grid input { padding: 9px; font-size: 13px; }
 
-            .bank-grid { grid-template-columns: 1fr; }
+            .bank-input-unit { width: 45px; }
+            .bank-input-price { width: 55px; }
 
             .mgmt-layout { flex-direction: column; height: auto; }
             .sidebar { width: 100%; height: auto; max-height: 200px; }
@@ -667,20 +673,28 @@ function saveCurrentOrder() {
 
         const bankCont = document.getElementById('bank-list-container');
         bankCont.innerHTML = state.bank.map((cat, cIdx) => `
-            <div class="card">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <h3 style="color:var(--teal)">📂 ${cat.cat}</h3>
-                    <button class="add-btn-small" style="margin:0;" onclick="addBankItem(${cIdx})">+ חומר חדש</button>
+            <div class="card" style="padding:16px 20px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span style="color:var(--teal); font-size:16px;">📂</span>
+                        <span style="font-weight:900; color:var(--teal); font-size:15px;">${cat.cat}</span>
+                        <span style="font-size:12px; color:#bbb;">(${cat.items.length} פריטים)</span>
+                    </div>
+                    <button class="add-btn-small" style="margin:0; padding:5px 12px; font-size:12px;" onclick="addBankItem(${cIdx})">+ הוסף</button>
+                </div>
+                <div style="display:flex; padding:4px 7px; font-size:11px; color:#aaa; font-weight:700; border-bottom:2px solid #eee; margin-bottom:2px;">
+                    <span style="flex:1;">שם חומר הגלם</span>
+                    <span style="width:55px; text-align:center;">יחידה</span>
+                    <span style="width:70px; text-align:center;">מחיר ₪</span>
+                    <span style="width:28px;"></span>
                 </div>
                 <div class="bank-grid">
                     ${cat.items.map((m, mIdx) => `
-                        <div class="bank-item-card">
-                            <input value="${m.name}" onchange="updateBank(${cIdx},${mIdx},'name',this.value)">
-                            <div style="display:flex; justify-content:space-between; margin-top:10px; align-items:center;">
-                                <input style="width:35%;" value="${m.unit || 'יח'}" onchange="updateBank(${cIdx},${mIdx},'unit',this.value)">
-                                <input style="width:35%;" type="number" value="${m.price}" onchange="updateBank(${cIdx},${mIdx},'price',this.value)"> ₪
-                                <button class="delete-btn" onclick="deleteBank(${cIdx},${mIdx})">✖</button>
-                            </div>
+                        <div class="bank-item-row">
+                            <input class="bank-input bank-input-name" value="${m.name}" onchange="updateBank(${cIdx},${mIdx},'name',this.value)">
+                            <input class="bank-input bank-input-unit" value="${m.unit || 'יח'}" onchange="updateBank(${cIdx},${mIdx},'unit',this.value)">
+                            <input class="bank-input bank-input-price" type="number" value="${m.price}" onchange="updateBank(${cIdx},${mIdx},'price',this.value)">
+                            <button class="delete-btn" style="font-size:14px; padding:0 4px;" onclick="deleteBank(${cIdx},${mIdx})">✖</button>
                         </div>
                     `).join('')}
                 </div>
