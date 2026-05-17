@@ -165,6 +165,27 @@
         .btn-order-action.c-green  { color: #2e7d32; }
         .btn-order-action.c-red    { color: #e53935; }
 
+        /* באנר קטגוריה */
+        .cat-banner {
+            height: 110px; background-size: cover; background-position: center;
+            border-radius: 10px 10px 0 0;
+            margin: -25px -25px 20px -25px;
+            position: relative; overflow: hidden;
+        }
+        .cat-banner-overlay {
+            position: absolute; inset: 0;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.6) 100%);
+            display: flex; align-items: flex-end; padding: 14px 20px;
+        }
+        .cat-banner-title {
+            color: white; font-size: 19px; font-weight: 900; margin: 0;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.6);
+        }
+        @media (max-width: 768px) {
+            .cat-banner { margin: -15px -15px 16px -15px; height: 85px; }
+            .cat-banner-title { font-size: 16px; }
+        }
+
         .delete-btn { color: #ff4d4d; border: none; background: none; cursor: pointer; font-weight: bold; font-size: 18px; }
         .add-btn-small { background: var(--teal-light); color: var(--teal); border: none; padding: 8px 15px; border-radius: 50px; cursor: pointer; font-weight: 700; margin-bottom: 10px; font-family: 'Heebo'; }
 
@@ -529,6 +550,32 @@
     function hardReset() { if(confirm("למחוק הכל ולאתחל מחדש?")) { localStorage.removeItem('libis_final'); db.ref('libis/state').remove(); location.reload(); } }
 
 
+    function getCategoryImage(name) {
+        const rules = [
+            { k:['פסט','ספגטי','קרבונ','ניוקי','לזנ'],  id:'1473093226795-af9932fe5856' },
+            { k:['סלט'],                                  id:'1512621776951-a57141f2eefd' },
+            { k:['קיש','פשטיד'],                          id:'1565299507177-d366a2a2ef43' },
+            { k:['כריכ','פוקצ','כריך','מקל'],            id:'1549931319-a545dcf3bc7f'  },
+            { k:['דג','סלמון','מושט','פורל','טונ'],       id:'1519708227418-c8fd9a32b7a2' },
+            { k:['עוף','פרגית','שניצ'],                   id:'1598103442097-8b74394b95c3' },
+            { k:['בשר','סטייק','המבורג','כבד'],           id:'1529193591184-b1d58069ecdd' },
+            { k:['מתוק','עוגה','קינוח','שוקולד','מאפ','בראוני'], id:'1488477181946-6428a0291777' },
+            { k:['ירק','צלוי','בטט'],                     id:'1540420773420-3366772f4999' },
+            { k:['מרק','סופ'],                            id:'1547592166-23ac45744acd'  },
+            { k:['אורז','קוסקוס','בורגול'],              id:'1536304929831-ee1ca9d44906' },
+            { k:['טורטי','בורית','פיתה'],                 id:'1565299624596-706b8e4c1c07' },
+            { k:['גבינ','חביתה','ביצ'],                  id:'1525351484163-7529414f2171' },
+        ];
+        const BASE = 'https://images.unsplash.com/photo-';
+        const PARAMS = '?w=900&h=220&fit=crop&auto=format&q=70';
+        for (const rule of rules) {
+            if (rule.k.some(k => name.includes(k)))
+                return BASE + rule.id + PARAMS;
+        }
+        // ברירת מחדל — שולחן עם אוכל
+        return BASE + '1414235077428-338989a2e8c0' + PARAMS;
+    }
+
     function switchMainTab(id, btn) {
         document.querySelectorAll('.container').forEach(c => c.classList.remove('active'));
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
@@ -790,8 +837,12 @@
     function render() {
         const orderCont = document.getElementById('order-products-container');
         orderCont.innerHTML = state.menu.map(cat => `
-            <div class="card">
-                <h3 style="color:var(--teal); margin-top:0;">${cat.cat}</h3>
+            <div class="card" style="padding-top:0; overflow:hidden;">
+                <div class="cat-banner" style="background-image:url('${getCategoryImage(cat.cat)}')">
+                    <div class="cat-banner-overlay">
+                        <h3 class="cat-banner-title">${cat.cat}</h3>
+                    </div>
+                </div>
                 ${cat.items.map(item => {
                     const activeOrders = orderItems.map((o, idx) => ({o, idx})).filter(({o}) => o.menuId === item.id);
                     return `
