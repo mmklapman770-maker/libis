@@ -29,7 +29,7 @@
         }
         #login-overlay.hidden { display: none; }
         .login-box {
-            background: white; border-radius: 20px; padding: 45px 40px; width: 100%; max-width: 380px;
+            background: white; border-radius: 20px; padding: 40px 32px; width: calc(100% - 40px); max-width: 380px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3); text-align: center;
         }
         .login-box img { height: 80px; margin-bottom: 20px; }
@@ -110,16 +110,25 @@
 
         #pdf-hidden-wrap { position: fixed; left: -9999px; top: 0; background: white; width: 210mm; direction: rtl; }
 
-        /* ===== מובייל ===== */
+        /* ===== מובייל טאבלט ===== */
         @media (max-width: 768px) {
-            .header { padding: 15px 10px; }
-            .header img { height: 50px; }
-            .sync-status { font-size: 11px; padding: 5px 12px; }
+            .header { padding: 12px 10px; }
+            .header img { height: 48px; }
 
-            .nav-main { gap: 6px; padding: 8px; }
-            .nav-btn { padding: 8px 12px; font-size: 12px; }
+            /* תפריט: שורה אחת עם גלילה אופקית */
+            .nav-main {
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                justify-content: flex-start;
+                gap: 6px;
+                padding: 10px 12px;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+            }
+            .nav-main::-webkit-scrollbar { display: none; }
+            .nav-btn { padding: 9px 14px; font-size: 13px; white-space: nowrap; flex-shrink: 0; }
 
-            .container { padding: 0 12px 170px 12px; margin: 15px auto; }
+            .container { padding: 0 12px 130px 12px; margin: 10px auto; }
             .card { padding: 15px; }
 
             .order-info-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -128,20 +137,30 @@
             .bank-grid { grid-template-columns: 1fr; }
 
             .mgmt-layout { flex-direction: column; height: auto; }
-            .sidebar { width: 100%; height: auto; max-height: 220px; }
+            .sidebar { width: 100%; height: auto; max-height: 200px; }
 
-            .summary-footer { padding: 10px 14px; gap: 8px; }
-            .footer-actions { gap: 7px; }
+            /* פוטר */
+            .summary-footer { padding: 10px 12px; gap: 8px; }
+            .footer-actions { gap: 6px; }
             .btn-export-main { padding: 10px 14px; font-size: 13px; border-radius: 12px; gap: 5px; }
             .btn-export-main .btn-icon { font-size: 15px; }
             .footer-stats .stat-value { font-size: 15px; }
-
-            .nav-btn { flex: 1 1 auto; min-width: 80px; text-align: center; }
         }
 
+        /* ===== מובייל קטן ===== */
         @media (max-width: 480px) {
-            .order-info-grid { grid-template-columns: 1fr; }
-            .nav-btn { flex: 1; text-align: center; font-size: 12px; padding: 8px 10px; }
+            .order-info-grid { grid-template-columns: 1fr 1fr; }
+
+            /* פוטר — כפתורים עם אייקון בלבד */
+            .summary-footer { padding: 8px 10px; }
+            .btn-export-main .btn-text { display: none; }
+            .btn-export-main { padding: 10px 13px; border-radius: 12px; }
+            .btn-export-main .btn-icon { font-size: 20px; }
+            .footer-stats .stat-label { font-size: 10px; }
+            .footer-stats .stat-value { font-size: 14px; }
+
+            /* כרטיסי הזמנה */
+            .card { padding: 12px; }
         }
     </style>
 </head>
@@ -222,13 +241,13 @@
     </div>
     <div class="footer-actions">
         <button class="btn-export-main" onclick="saveCurrentOrder()">
-            <span class="btn-icon">💾</span> שמור
+            <span class="btn-icon">💾</span><span class="btn-text"> שמור</span>
         </button>
         <button class="btn-export-main" onclick="generatePDF('invoice')">
-            <span class="btn-icon">📄</span> הפק הזמנה
+            <span class="btn-icon">📄</span><span class="btn-text"> הפק הזמנה</span>
         </button>
         <button class="btn-export-main" onclick="generatePDF('shopping')">
-            <span class="btn-icon">🛒</span> רשימת קניות
+            <span class="btn-icon">🛒</span><span class="btn-text"> רשימת קניות</span>
         </button>
     </div>
 </div>
