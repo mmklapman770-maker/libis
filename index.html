@@ -237,7 +237,28 @@
 
     let _editorTab = 'base';
 
+    function sanitizeState(s) {
+        if (!s) return s;
+        if (!s.menu) s.menu = [];
+        s.menu.forEach(cat => {
+            if (!cat.items) cat.items = [];
+            cat.items.forEach(item => {
+                if (!item.recipe) item.recipe = [];
+                if (item.options) {
+                    if (!item.optionRecipes) item.optionRecipes = {};
+                    item.options.forEach(opt => {
+                        if (!item.optionRecipes[opt]) item.optionRecipes[opt] = [];
+                    });
+                }
+            });
+        });
+        if (!s.bank) s.bank = [];
+        s.bank.forEach(cat => { if (!cat.items) cat.items = []; });
+        return s;
+    }
+
     function getRecipeArr(item, tab) {
+        if (!item.recipe) item.recipe = [];
         if (tab === 'base') return item.recipe;
         if (!item.optionRecipes) item.optionRecipes = {};
         if (!item.optionRecipes[tab]) item.optionRecipes[tab] = [];
@@ -245,6 +266,7 @@
     }
 
     function calcRecipeCost(recipe) {
+        if (!recipe) return 0;
         return recipe.reduce((sum, r) => {
             const b = state.bank.flatMap(bc => bc.items).find(bi => bi.id === r.bankId);
             return sum + (b ? b.price * r.qty : 0);
@@ -896,7 +918,7 @@
         // טוען מפיירבייס — אם יש נתונים שם, הם מנצחים את ה-localStorage
         try {
             const snap = await db.ref('libis/state').once('value');
-            const fbState = snap.val();
+            const fbState = sanitizeState(snap.val());
             if (fbState && fbState.menu) {
                 state = fbState;
                 localStorage.setItem('libis_final', JSON.stringify(state));
@@ -910,7 +932,7 @@
         // מאזין לשינויים ממכשירים אחרים בזמן אמת
         db.ref('libis/state').on('value', snap => {
             if (_fbSaving) return; // מונע לולאה — השינוי שלנו עצמנו
-            const s = snap.val();
+            const s = sanitizeState(snap.val());
             if (s && s.menu) {
                 state = s;
                 localStorage.setItem('libis_final', JSON.stringify(state));
