@@ -58,8 +58,6 @@
         .nav-btn { padding: 10px 22px; border: none; border-radius: 50px; cursor: pointer; font-weight: 700; background: #f0f0f0; color: #555; transition: 0.25s; font-family: 'Heebo'; font-size: 14px; white-space: nowrap; }
         .nav-btn:hover { background: #e0e0e0; }
         .nav-btn.active { background: var(--teal); color: white; box-shadow: 0 3px 10px rgba(0,130,145,0.3); }
-        .nav-sync { background: #f0f8f9; color: var(--teal); border: 1.5px solid #c5e8ec; }
-        .nav-sync:hover { background: #e0f2f4; }
 
         .container { max-width: 1200px; margin: 30px auto; padding: 0 20px 150px 20px; display: none; }
         .container.active { display: block; }
@@ -261,7 +259,6 @@
     <button class="nav-btn" onclick="switchMainTab('saved-tab', this)">📋 הזמנות שמורות</button>
     <button class="nav-btn" onclick="switchMainTab('bank-tab', this)">🏦 בנק חומרי גלם</button>
     <button class="nav-btn" onclick="switchMainTab('recipes-tab', this)">📖 מתכוני מוצרים</button>
-    <button id="sync-info" class="nav-btn nav-sync" onclick="syncFromSheets()">🔄 סנכרון</button>
 </div>
 
 <div id="order-tab" class="container active">
@@ -409,7 +406,6 @@
     const db = firebase.database();
     let _fbSaving = false;
 
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbyPdaP8K6HhN7J14GwKDHIZGxV3mbNC4zW6qNb0UNvohgO435wSQJkH4tY_c2Zh8NB45g/exec';
 
     const initialMenu = [
         { cat: "פסטות ומוקרמים", items: [
@@ -532,52 +528,6 @@
     }
     function hardReset() { if(confirm("למחוק הכל ולאתחל מחדש?")) { localStorage.removeItem('libis_final'); db.ref('libis/state').remove(); location.reload(); } }
 
-    async function syncFromSheets() {
-        const statusEl = document.getElementById('sync-info');
-        statusEl.innerText = "⏳ מסנכרן...";
-        statusEl.disabled = true;
-        try {
-            const response = await fetch(GAS_URL);
-            const data = await response.json();
-
-            // הסקריפט מחזיר מערך של אובייקטים: [{name, price, category}, ...]
-            const rows = Array.isArray(data) ? data : (data.data || data.items || []);
-
-            const grouped = {};
-            rows.forEach((row, index) => {
-                // תמיכה בשני פורמטים: אובייקט JSON או מערך
-                const name     = row.name     || row[0] || '';
-                const price    = parseFloat(row.price    || row[1]) || 0;
-                const category = row.category || row[2] || 'כללי';
-                const unit     = row.unit     || row[3] || 'יח';
-                if (name && price > 0 && name.length > 1) {
-                    if (!grouped[category]) grouped[category] = [];
-                    grouped[category].push({ id: `b-${index}`, name, price, unit });
-                }
-            });
-
-            const newBank = Object.entries(grouped).map(([cat, items]) => ({ cat, items }));
-
-            if (newBank.length === 0) {
-                statusEl.innerText = "⚠️ ריק";
-                setTimeout(() => { statusEl.innerText = "🔄 סנכרון"; }, 3000);
-                statusEl.disabled = false;
-                return;
-            }
-
-            state.bank = newBank;
-            save();
-            const total = newBank.reduce((s, c) => s + c.items.length, 0);
-            statusEl.innerText = `✅ ${total} חומרים`;
-            render();
-            setTimeout(() => { statusEl.innerText = "🔄 סנכרון"; }, 3000);
-        } catch (e) {
-            statusEl.innerText = "❌ שגיאה";
-            console.error(e);
-            setTimeout(() => { statusEl.innerText = "🔄 סנכרון"; }, 3000);
-        }
-        statusEl.disabled = false;
-    }
 
     function switchMainTab(id, btn) {
         document.querySelectorAll('.container').forEach(c => c.classList.remove('active'));
@@ -961,8 +911,8 @@
         renderSavedOrders();
     }
 
-    function updateBank(cIdx, mIdx, f, v) { state.bank[cIdx].items[mIdx][f] = f==='price'?parseFloat(v):v; save(); updateStats(); pushBankToSheets(); }
-    function deleteBank(cIdx, mIdx) { state.bank[cIdx].items.splice(mIdx, 1); render(); save(); pushBankToSheets(); }
+    function updateBank(cIdx, mIdx, f, v) { state.bank[cIdx].items[mIdx][f] = f==='price'?parseFloat(v):v; save(); updateStats(); }
+    function deleteBank(cIdx, mIdx) { state.bank[cIdx].items.splice(mIdx, 1); render(); save(); }
     function addBankItem(cIdx) { state.bank[cIdx].items.push({id:Date.now(), name:"חדש", unit:"יח", price:0}); render(); save(); }
     function addBankCategory() { const n = prompt("שם קטגוריה:"); if(n) { state.bank.push({cat:n, items:[]}); render(); save(); } }
     function addMenuCategory() { const n = prompt("שם קטגוריה:"); if(n) { state.menu.push({cat:n, items:[]}); render(); save(); } }
@@ -1183,19 +1133,6 @@
         openEditor(cIdx, iIdx);
     };
 
-    async function pushBankToSheets() {
-        const allItems = state.bank.flatMap(cat =>
-            cat.items.map(item => ({ name: item.name, price: item.price, category: cat.cat, unit: item.unit || 'יח' }))
-        );
-        try {
-            await fetch(GAS_URL, {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'updateBank', data: allItems })
-            });
-        } catch(e) { console.warn('שגיאה בשמירה לשיטס', e); }
-    }
 
     function getOrderItemRecipes(mi, o) {
         const recipes = [...mi.recipe];
