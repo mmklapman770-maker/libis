@@ -21,14 +21,15 @@
         }
 
         body { font-family: 'Heebo', sans-serif; background-color: var(--bg); margin: 0; padding: 0; color: #333; line-height: 1.6; }
-        .header { text-align: center; background: var(--teal); padding: 25px; border-bottom: 5px solid var(--gold); }
-        .header img { height: 70px; }
-        .sync-status { font-size: 13px; background: rgba(255,255,255,0.2); color: white; padding: 6px 18px; border-radius: 20px; display: inline-block; margin-top: 10px; cursor: pointer; border: none; font-family: 'Heebo'; font-weight: 700; transition: 0.2s; }
-        .sync-status:hover { background: rgba(255,255,255,0.35); }
+        .header { text-align: center; background: var(--teal); padding: 18px 25px; border-bottom: 5px solid var(--gold); }
+        .header img { height: 65px; }
 
-        .nav-main { display: flex; justify-content: center; gap: 10px; padding: 15px; background: white; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        .nav-btn { padding: 12px 25px; border: none; border-radius: 50px; cursor: pointer; font-weight: 700; background: #f0f0f0; transition: 0.3s; font-family: 'Heebo'; }
-        .nav-btn.active { background: var(--teal); color: white; }
+        .nav-main { display: flex; justify-content: center; align-items: center; gap: 8px; padding: 12px 20px; background: white; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 12px rgba(0,0,0,0.08); flex-wrap: wrap; }
+        .nav-btn { padding: 10px 22px; border: none; border-radius: 50px; cursor: pointer; font-weight: 700; background: #f0f0f0; color: #555; transition: 0.25s; font-family: 'Heebo'; font-size: 14px; white-space: nowrap; }
+        .nav-btn:hover { background: #e0e0e0; }
+        .nav-btn.active { background: var(--teal); color: white; box-shadow: 0 3px 10px rgba(0,130,145,0.3); }
+        .nav-sync { background: #f0f8f9; color: var(--teal); border: 1.5px solid #c5e8ec; }
+        .nav-sync:hover { background: #e0f2f4; }
 
         .container { max-width: 1200px; margin: 30px auto; padding: 0 20px 150px 20px; display: none; }
         .container.active { display: block; }
@@ -61,8 +62,8 @@
             .header img { height: 50px; }
             .sync-status { font-size: 11px; padding: 5px 12px; }
 
-            .nav-main { gap: 6px; padding: 10px 8px; flex-wrap: wrap; }
-            .nav-btn { padding: 9px 14px; font-size: 13px; }
+            .nav-main { gap: 6px; padding: 8px; }
+            .nav-btn { padding: 8px 12px; font-size: 12px; }
 
             .container { padding: 0 12px 170px 12px; margin: 15px auto; }
             .card { padding: 15px; }
@@ -79,7 +80,7 @@
             .summary-footer > div:first-child { width: 100%; text-align: center; font-size: 14px; }
             .btn-export-main { padding: 10px 16px; font-size: 13px; }
 
-            .manage-sub-nav { flex-wrap: wrap; }
+            .nav-btn { flex: 1 1 auto; min-width: 80px; text-align: center; }
         }
 
         @media (max-width: 480px) {
@@ -92,14 +93,14 @@
 
 <div class="header">
     <img src="libis-logo.png" alt="Libis Logo">
-    <br>
-    <button id="sync-info" class="sync-status" onclick="syncFromSheets()">🔄 סנכרן בנק חומרי גלם מגוגל שיטס</button>
 </div>
 
 <div class="nav-main">
     <button class="nav-btn active" onclick="switchMainTab('order-tab', this)">🛒 יצירת הזמנה</button>
     <button class="nav-btn" onclick="switchMainTab('saved-tab', this)">📋 הזמנות שמורות</button>
-    <button class="nav-btn" onclick="switchMainTab('manage-tab', this)">⚙️ עדכון עלויות ותפריט</button>
+    <button class="nav-btn" onclick="switchMainTab('bank-tab', this)">🏦 בנק חומרי גלם</button>
+    <button class="nav-btn" onclick="switchMainTab('recipes-tab', this)">📖 מתכוני מוצרים</button>
+    <button id="sync-info" class="nav-btn nav-sync" onclick="syncFromSheets()">🔄 סנכרון</button>
 </div>
 
 <div id="order-tab" class="container active">
@@ -112,27 +113,21 @@
     <div id="order-products-container"></div>
 </div>
 
-<div id="manage-tab" class="container">
-    <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 20px;">
-        <button class="nav-btn active" id="btn-bank" onclick="toggleMgmtMode('bank')">בנק חומרי גלם</button>
-        <button class="nav-btn" id="btn-recipes" onclick="toggleMgmtMode('recipes')">מתכוני מוצרים</button>
+<div id="bank-tab" class="container">
+    <div style="display:flex; gap:10px; margin-bottom:16px; align-items:center;">
+        <button class="add-btn-small" style="margin:0;" onclick="addBankCategory()">+ קטגוריה חדשה בבנק</button>
     </div>
+    <div id="bank-list-container"></div>
+</div>
 
-    <div id="bank-section">
-        <div style="display:flex; gap:10px; margin-bottom:10px; align-items:center;">
-            <button class="add-btn-small" style="margin:0;" onclick="addBankCategory()">+ קטגוריה חדשה בבנק</button>
-            <button class="add-btn-small" style="margin:0; background:#e0f7fa;" onclick="syncFromSheets()">🔄 סנכרן מגוגל שיטס</button>
-        </div>
-        <div id="bank-list-container"></div>
-    </div>
-
-    <div id="recipes-section" style="display:none;">
+<div id="recipes-tab" class="container">
+    <div style="margin-bottom:16px;">
         <button class="add-btn-small" onclick="addMenuCategory()">+ קטגוריה חדשה בתפריט</button>
-        <div class="mgmt-layout">
-            <div class="sidebar" id="sidebar-menu-list"></div>
-            <div id="product-editor-area" style="flex:1; background:white; border-radius:var(--radius); padding:25px; box-shadow:var(--shadow); overflow-y:auto;">
-                <div style="text-align:center; margin-top:100px; color:#aaa;">בחר מוצר לעריכה</div>
-            </div>
+    </div>
+    <div class="mgmt-layout">
+        <div class="sidebar" id="sidebar-menu-list"></div>
+        <div id="product-editor-area" style="flex:1; background:white; border-radius:var(--radius); padding:25px; box-shadow:var(--shadow); overflow-y:auto;">
+            <div style="text-align:center; margin-top:100px; color:#aaa;">בחר מוצר לעריכה</div>
         </div>
     </div>
 </div>
@@ -291,7 +286,7 @@
 
     async function syncFromSheets() {
         const statusEl = document.getElementById('sync-info');
-        statusEl.innerText = "🔄 מסנכרן...";
+        statusEl.innerText = "⏳ מסנכרן...";
         statusEl.disabled = true;
         try {
             const response = await fetch(GAS_URL);
@@ -316,7 +311,8 @@
             const newBank = Object.entries(grouped).map(([cat, items]) => ({ cat, items }));
 
             if (newBank.length === 0) {
-                statusEl.innerText = "⚠️ לא נמצאו נתונים בשיטס";
+                statusEl.innerText = "⚠️ ריק";
+                setTimeout(() => { statusEl.innerText = "🔄 סנכרון"; }, 3000);
                 statusEl.disabled = false;
                 return;
             }
@@ -324,11 +320,13 @@
             state.bank = newBank;
             save();
             const total = newBank.reduce((s, c) => s + c.items.length, 0);
-            statusEl.innerText = `✅ סונכרנו ${total} חומרים מהשיטס`;
+            statusEl.innerText = `✅ ${total} חומרים`;
             render();
+            setTimeout(() => { statusEl.innerText = "🔄 סנכרון"; }, 3000);
         } catch (e) {
-            statusEl.innerText = "❌ שגיאת סנכרון – בדוק חיבור";
+            statusEl.innerText = "❌ שגיאה";
             console.error(e);
+            setTimeout(() => { statusEl.innerText = "🔄 סנכרון"; }, 3000);
         }
         statusEl.disabled = false;
     }
@@ -341,14 +339,7 @@
         render();
     }
 
-    function toggleMgmtMode(mode) {
-        document.getElementById('bank-section').style.display = mode === 'bank' ? 'block' : 'none';
-        document.getElementById('recipes-section').style.display = mode === 'recipes' ? 'block' : 'none';
-        document.getElementById('btn-bank').classList.toggle('active', mode === 'bank');
-        document.getElementById('btn-recipes').classList.toggle('active', mode === 'recipes');
-    }
-
-    function saveCurrentOrder() {
+function saveCurrentOrder() {
         if (orderItems.length === 0) { alert("אין פריטים בהזמנה לשמירה."); return; }
         const custName  = document.getElementById('cust-name').value  || 'לקוח לא ידוע';
         const custDate  = document.getElementById('cust-date').value  || '';
