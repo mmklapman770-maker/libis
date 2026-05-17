@@ -110,6 +110,32 @@
         .btn-export-main:active { transform: translateY(0); }
         .btn-export-main .btn-icon { font-size: 18px; }
 
+        /* טאבים בהזמנות שמורות */
+        .saved-tab-btn {
+            padding: 8px 18px; border: none; border-radius: 50px; cursor: pointer;
+            font-family: 'Heebo'; font-size: 13px; font-weight: 700;
+            background: #f0f0f0; color: #666; transition: 0.2s;
+        }
+        .saved-tab-btn.active { background: var(--teal); color: white; }
+
+        /* פילטר הכנסות */
+        .rev-filter-btn {
+            padding: 5px 13px; border: 1.5px solid #ddd; border-radius: 20px;
+            cursor: pointer; font-family: 'Heebo'; font-size: 12px; font-weight: 700;
+            background: white; color: #666; transition: 0.2s;
+        }
+        .rev-filter-btn.active { background: var(--teal); color: white; border-color: var(--teal); }
+
+        /* כרטיסי נתון */
+        .stat-box {
+            flex: 1; min-width: 120px; background: #f8f9fa; border-radius: 12px;
+            padding: 14px 16px; text-align: center;
+        }
+        .stat-box .sb-val { font-size: 22px; font-weight: 900; color: var(--teal); }
+        .stat-box .sb-lbl { font-size: 11px; color: #999; margin-top: 2px; }
+        .stat-box.sb-gold { background: #fffde7; }
+        .stat-box.sb-gold .sb-val { color: var(--gold); }
+
         /* כפתורי פעולה בהזמנות שמורות — שקוף עם מסגרת */
         .btn-order-action {
             display: inline-flex; align-items: center; gap: 5px;
@@ -261,8 +287,11 @@
         <span class="stat-value" id="stat-total-rev">0 ₪</span>
     </div>
     <div class="footer-actions">
-        <button class="btn-export-main" onclick="saveCurrentOrder()">
+        <button class="btn-export-main" onclick="saveCurrentOrder('future')">
             <span class="btn-icon">💾</span><span class="btn-text"> שמור</span>
+        </button>
+        <button class="btn-export-main" style="background:#37474f;" onclick="saveCurrentOrder('draft')">
+            <span class="btn-icon">📝</span><span class="btn-text"> טיוטה</span>
         </button>
         <button class="btn-export-main" onclick="generatePDF('invoice')">
             <span class="btn-icon">📄</span><span class="btn-text"> הפק הזמנה</span>
@@ -274,6 +303,28 @@
 </div>
 
 <div id="saved-tab" class="container">
+
+    <!-- לוח הכנסות -->
+    <div class="card" id="revenue-card" style="margin-bottom:18px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+            <span style="font-weight:900;font-size:16px;color:var(--teal);">📊 סיכום הכנסות (הזמנות שבוצעו)</span>
+            <div style="display:flex;gap:6px;">
+                <button class="rev-filter-btn active" onclick="switchRevFilter('all',this)">כללי</button>
+                <button class="rev-filter-btn" onclick="switchRevFilter('year',this)">שנתי</button>
+                <button class="rev-filter-btn" onclick="switchRevFilter('month',this)">חודשי</button>
+                <button class="rev-filter-btn" onclick="switchRevFilter('week',this)">שבועי</button>
+            </div>
+        </div>
+        <div id="revenue-stats" style="display:flex;gap:16px;flex-wrap:wrap;"></div>
+    </div>
+
+    <!-- תת-טאבים -->
+    <div style="display:flex;gap:8px;margin-bottom:16px;border-bottom:2px solid #eee;padding-bottom:10px;flex-wrap:wrap;">
+        <button class="saved-tab-btn active" onclick="switchSavedTab('future',this)">📅 עתידיות</button>
+        <button class="saved-tab-btn" onclick="switchSavedTab('done',this)">✅ בוצע</button>
+        <button class="saved-tab-btn" onclick="switchSavedTab('draft',this)">📝 טיוטות</button>
+    </div>
+
     <div id="saved-orders-list"></div>
 </div>
 
@@ -416,6 +467,7 @@
         if (!s.bank) s.bank = [];
         s.bank.forEach(cat => { if (!cat.items) cat.items = []; });
         if (!s.savedOrders) s.savedOrders = [];
+        s.savedOrders.forEach(o => { if (!o.status) o.status = 'future'; });
         return s;
     }
 
@@ -499,7 +551,7 @@
         render();
     }
 
-function saveCurrentOrder() {
+    function saveCurrentOrder(status = 'future') {
         if (orderItems.length === 0) { alert("אין פריטים בהזמנה לשמירה."); return; }
         const custName  = document.getElementById('cust-name').value  || 'לקוח לא ידוע';
         const custDate  = document.getElementById('cust-date').value  || '';
@@ -512,15 +564,17 @@ function saveCurrentOrder() {
             const mi = state.menu.flatMap(c => c.items).find(m => m.id === o.menuId);
             if (mi) total += mi.price * o.qty;
         });
+        const ts = Date.now();
         state.savedOrders.unshift({
-            id: Date.now(),
+            id: ts, timestamp: ts,
             createdAt: new Date().toLocaleDateString('he-IL'),
             custName, custDate, custLoc, custPhone, custNotes,
-            total,
+            status, total,
             items: JSON.parse(JSON.stringify(orderItems))
         });
         save();
-        alert(`✅ ההזמנה של "${custName}" נשמרה! תוכל למצוא אותה בטאב "הזמנות שמורות".`);
+        const label = status === 'draft' ? 'טיוטה' : 'הזמנה עתידית';
+        alert(`✅ נשמר כ${label} עבור "${custName}"`);
     }
 
     function loadSavedOrder(id) {
@@ -550,26 +604,108 @@ function saveCurrentOrder() {
         renderSavedOrders();
     }
 
+    let _savedTab = 'future';
+    let _revFilter = 'all';
+
+    function switchSavedTab(tab, btn) {
+        _savedTab = tab;
+        document.querySelectorAll('.saved-tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        renderSavedOrders();
+    }
+
+    function switchRevFilter(filter, btn) {
+        _revFilter = filter;
+        document.querySelectorAll('.rev-filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        renderRevenue();
+    }
+
+    function changeOrderStatus(id, status) {
+        const order = state.savedOrders.find(o => o.id === id);
+        if (!order) return;
+        if (status === 'done' && !order.doneAt) order.doneAt = Date.now();
+        order.status = status;
+        save();
+        renderSavedOrders();
+        renderRevenue();
+    }
+
+    function renderRevenue() {
+        const el = document.getElementById('revenue-stats');
+        if (!el) return;
+        const now = Date.now();
+        const weekMs  = 7  * 24 * 3600 * 1000;
+        const monthMs = 30 * 24 * 3600 * 1000;
+        const yearMs  = 365* 24 * 3600 * 1000;
+        const done = (state.savedOrders || []).filter(o => o.status === 'done');
+
+        function sumIn(ms) {
+            return done.filter(o => (o.doneAt || o.id) > now - ms)
+                       .reduce((s, o) => s + (o.total || 0), 0);
+        }
+        const totAll   = done.reduce((s, o) => s + (o.total || 0), 0);
+        const totYear  = sumIn(yearMs);
+        const totMonth = sumIn(monthMs);
+        const totWeek  = sumIn(weekMs);
+        const countDone = done.length;
+
+        const show = (val, lbl, gold=false) =>
+            `<div class="stat-box${gold?' sb-gold':''}">
+                <div class="sb-val">${val.toLocaleString()} ₪</div>
+                <div class="sb-lbl">${lbl}</div>
+            </div>`;
+
+        if (_revFilter === 'all')   el.innerHTML = show(totAll,'סה"כ כל הזמנות',true) + show(totYear,'שנה אחרונה') + show(totMonth,'30 יום אחרונים') + show(totWeek,'7 ימים אחרונים') + `<div class="stat-box"><div class="sb-val">${countDone}</div><div class="sb-lbl">הזמנות שבוצעו</div></div>`;
+        else if (_revFilter==='year')  el.innerHTML = show(totYear,'הכנסות שנה אחרונה',true) + `<div class="stat-box"><div class="sb-val">${done.filter(o=>(o.doneAt||o.id)>now-yearMs).length}</div><div class="sb-lbl">הזמנות</div></div>`;
+        else if (_revFilter==='month') el.innerHTML = show(totMonth,'הכנסות 30 יום אחרונים',true) + `<div class="stat-box"><div class="sb-val">${done.filter(o=>(o.doneAt||o.id)>now-monthMs).length}</div><div class="sb-lbl">הזמנות</div></div>`;
+        else if (_revFilter==='week')  el.innerHTML = show(totWeek,'הכנסות שבוע אחרון',true) + `<div class="stat-box"><div class="sb-val">${done.filter(o=>(o.doneAt||o.id)>now-weekMs).length}</div><div class="sb-lbl">הזמנות</div></div>`;
+    }
+
     function renderSavedOrders() {
+        renderRevenue();
         const cont = document.getElementById('saved-orders-list');
         if (!cont) return;
-        if (!state.savedOrders || state.savedOrders.length === 0) {
-            cont.innerHTML = `<div style="text-align:center;margin-top:80px;color:#aaa;font-size:18px;">אין הזמנות שמורות עדיין</div>`;
+        const all = state.savedOrders || [];
+        const filtered = all.filter(o => (o.status || 'future') === _savedTab);
+
+        const tabEmoji = { future:'📅', done:'✅', draft:'📝' };
+        const tabName  = { future:'עתידיות', done:'בוצעו', draft:'טיוטות' };
+
+        if (filtered.length === 0) {
+            cont.innerHTML = `<div style="text-align:center;margin-top:60px;color:#aaa;font-size:17px;">${tabEmoji[_savedTab]} אין הזמנות ${tabName[_savedTab]}</div>`;
             return;
         }
-        cont.innerHTML = state.savedOrders.map(order => {
+
+        cont.innerHTML = filtered.map(order => {
             const itemCount = order.items ? order.items.length : 0;
+            const isDone = order.status === 'done';
+            const borderColor = isDone ? '#2e7d32' : _savedTab==='draft' ? '#c8941a' : 'transparent';
+            const doneDate = order.doneAt ? new Date(order.doneAt).toLocaleDateString('he-IL') : '';
+
             return `
-            <div class="card" style="margin-bottom:14px;">
-                <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">
-                    <div>
-                        <div style="font-size:17px;font-weight:900;color:var(--teal);">👤 ${order.custName}</div>
-                        <div style="font-size:13px;color:#666;margin-top:4px;">
-                            ${order.custDate ? `📅 ${order.custDate}` : ''} ${order.custLoc ? `📍 ${order.custLoc}` : ''} ${order.custPhone ? `📞 ${order.custPhone}` : ''}
+            <div class="card" style="margin-bottom:12px; border-right:4px solid ${borderColor}; padding:14px 18px;">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">
+                    <div style="flex:1;min-width:0;">
+                        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                            <span style="font-size:16px;font-weight:900;color:${isDone?'#2e7d32':'var(--teal)'};">
+                                ${isDone?'✅':'👤'} ${order.custName}
+                            </span>
+                            ${isDone ? `<span style="font-size:11px;background:#e8f5e9;color:#2e7d32;border-radius:20px;padding:2px 10px;font-weight:700;">בוצע ב־${doneDate}</span>` : ''}
                         </div>
-                        <div style="font-size:12px;color:#aaa;margin-top:4px;">נשמרה ב־${order.createdAt} | ${itemCount} פריטים | סה"כ ${(order.total||0).toLocaleString()} ₪</div>
+                        <div style="font-size:13px;color:#666;margin-top:4px;">
+                            ${order.custDate ? `📅 ${order.custDate}` : ''}
+                            ${order.custLoc  ? `&nbsp;📍 ${order.custLoc}` : ''}
+                            ${order.custPhone? `&nbsp;📞 ${order.custPhone}` : ''}
+                        </div>
+                        <div style="font-size:12px;color:#aaa;margin-top:3px;">
+                            נשמרה ב־${order.createdAt} &nbsp;|&nbsp; ${itemCount} פריטים &nbsp;|&nbsp;
+                            <b style="color:var(--teal);">${(order.total||0).toLocaleString()} ₪</b>
+                        </div>
                     </div>
-                    <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:4px;">
+                    <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+                        ${!isDone ? `<button class="btn-order-action" style="color:#2e7d32;border-color:#2e7d32;background:#e8f5e9;" onclick="changeOrderStatus(${order.id},'done')">✓ בוצע</button>` : `<button class="btn-order-action c-dark" onclick="changeOrderStatus(${order.id},'future')">↩ החזר</button>`}
+                        ${_savedTab !== 'draft' ? '' : ''}
                         <button class="btn-order-action c-teal"   onclick="loadSavedOrder(${order.id})">✏️ עריכה</button>
                         <button class="btn-order-action c-purple" onclick="duplicateSavedOrder(${order.id})">📋 שכפול</button>
                         <button class="btn-order-action c-dark"   onclick="loadAndExport(${order.id},'invoice')">📄 PDF</button>
