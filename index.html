@@ -1458,7 +1458,6 @@
             console.warn('לא הצלחתי לטעון מפיירבייס, עובד עם נתונים מקומיים');
         }
         render();
-        syncFromSheets();
 
         // מאזין לשינויים ממכשירים אחרים בזמן אמת
         db.ref('libis/state').on('value', snap => {
