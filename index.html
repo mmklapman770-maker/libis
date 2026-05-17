@@ -76,10 +76,32 @@
         .bank-input-price { width: 70px; text-align: center; }
         .bank-price-label { font-size: 12px; color: #aaa; }
 
-        .mgmt-layout { display: flex; gap: 20px; height: 70vh; }
-        .sidebar { width: 300px; background: white; border-radius: var(--radius); padding: 15px; overflow-y: auto; box-shadow: var(--shadow); }
+        .mgmt-layout { display: flex; gap: 20px; align-items: flex-start; }
+        .sidebar { width: 300px; background: var(--bg); border-radius: var(--radius); padding: 6px; overflow-y: auto; box-shadow: var(--shadow); }
+        .sidebar-inner { padding: 10px; }
         .sidebar-item { padding: 10px; cursor: pointer; border-radius: 8px; margin-bottom: 5px; font-size: 14px; border-bottom: 1px solid #f9f9f9; }
         .sidebar-item.active { background: var(--teal-light); color: var(--teal); font-weight: 700; border-right: 4px solid var(--teal); }
+        .sidebar-cat-banner {
+            position: relative; height: 70px; overflow: hidden; margin-bottom: 0;
+        }
+        .sidebar-cat-banner img {
+            position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+        }
+        .sidebar-cat-banner-overlay {
+            position: absolute; inset: 0;
+            background: linear-gradient(to left, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.2) 100%);
+            display: flex; align-items: center; padding: 0 12px;
+            gap: 8px;
+        }
+        .sidebar-cat-title {
+            color: white; font-weight: 900; font-size: 15px; text-shadow: 0 1px 4px rgba(0,0,0,0.7);
+            flex: 1;
+        }
+        .sidebar-cat-rename-btn {
+            background: none; border: none; cursor: pointer; font-size: 13px;
+            color: rgba(255,255,255,0.8); padding: 2px 5px; border-radius: 4px; transition: 0.15s;
+        }
+        .sidebar-cat-rename-btn:hover { background: rgba(255,255,255,0.2); }
 
         .summary-footer {
             position: fixed; bottom: 0; width: 100%; z-index: 1001;
@@ -219,8 +241,9 @@
             .bank-input-unit { width: 45px; }
             .bank-input-price { width: 55px; }
 
-            .mgmt-layout { flex-direction: column; height: auto; }
-            .sidebar { width: 100%; height: auto; max-height: 200px; }
+            .mgmt-layout { flex-direction: column; }
+            .sidebar { width: 100% !important; max-width: 100% !important; }
+            .sidebar-cat-banner { height: 60px; }
 
             /* פוטר */
             .summary-footer { padding: 10px 12px; gap: 8px; }
@@ -310,7 +333,7 @@
     </div>
     <div class="mgmt-layout" id="mgmt-layout">
         <div class="sidebar" id="sidebar-menu-list" style="width:100%; max-width:100%;"></div>
-        <div id="product-editor-area" style="display:none; flex:1; background:white; border-radius:var(--radius); padding:25px; box-shadow:var(--shadow); overflow-y:auto;"></div>
+        <div id="product-editor-area" style="display:none; flex:1; background:white; border-radius:var(--radius); padding:25px; box-shadow:var(--shadow); overflow-y:auto; max-height:80vh;"></div>
     </div>
 </div>
 
@@ -928,34 +951,43 @@
 
         const sidebar = document.getElementById('sidebar-menu-list');
         sidebar.innerHTML = state.menu.map((cat, cIdx) => `
-            <div style="display:flex; align-items:center; gap:4px; margin-top:15px; margin-bottom:2px;">
-                <input value="${cat.cat}"
-                    onchange="renameCategory(${cIdx}, this.value)"
-                    style="font-weight:900; color:#888; font-size:12px; border:none; background:transparent; flex:1; padding:2px 4px; border-radius:4px; font-family:'Heebo';"
-                    onfocus="this.style.background='#f0f0f0'; this.style.border='1px solid #ddd';"
-                    onblur="this.style.background='transparent'; this.style.border='none';">
-            </div>
-            <div id="drop-zone-${cIdx}"
-                ondragover="event.preventDefault(); document.getElementById('drop-zone-${cIdx}').style.background='#e0f2f4';"
-                ondragleave="document.getElementById('drop-zone-${cIdx}').style.background='transparent';"
-                ondrop="dropItem(event,${cIdx}); document.getElementById('drop-zone-${cIdx}').style.background='transparent';"
-                style="border-radius:8px; min-height:10px; transition:0.2s;">
-                ${cat.items.map((item, iIdx) => `
-                    <div class="sidebar-item" id="side-${item.id}"
-                        draggable="true"
-                        ondragstart="dragItem(event,${cIdx},${iIdx})"
-                        onclick="openEditor(${cIdx},${iIdx})"
-                        style="display:flex; align-items:center; gap:6px; padding:6px 8px; cursor:pointer;">
-                        <span style="color:#ccc; cursor:grab; font-size:15px;" title="גרור">⠿</span>
-                        <span style="flex:1; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.name}</span>
-                        <button onclick="event.stopPropagation(); promptRenameMenuItem(${cIdx},${iIdx});"
-                            title="ערוך שם" style="border:none;background:none;cursor:pointer;color:#aaa;font-size:14px;padding:2px;line-height:1;">✏️</button>
-                        <button onclick="event.stopPropagation(); deleteMenuItem(${cIdx},${iIdx});"
-                            title="מחק מוצר" style="border:none;background:none;cursor:pointer;color:#ff6b6b;font-size:14px;padding:2px;line-height:1;">🗑️</button>
+            <div style="margin-bottom:4px; border-radius:10px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.07);">
+                <!-- באנר תמונה לקטגוריה -->
+                <div class="sidebar-cat-banner">
+                    <img src="${getCategoryImage(cat.cat)}"
+                        onerror="this.style.display='none'; this.parentElement.style.background='linear-gradient(135deg,#006b78,#008291)';">
+                    <div class="sidebar-cat-banner-overlay">
+                        <span class="sidebar-cat-title">${cat.cat}</span>
+                        <button class="sidebar-cat-rename-btn"
+                            onclick="event.stopPropagation(); promptRenameCategory(${cIdx});"
+                            title="שנה שם">✏️</button>
                     </div>
-                `).join('')}
+                </div>
+                <!-- רשימת מוצרים -->
+                <div style="background:white; padding:6px 8px 4px;">
+                    <div id="drop-zone-${cIdx}"
+                        ondragover="event.preventDefault(); document.getElementById('drop-zone-${cIdx}').style.background='#e0f2f4';"
+                        ondragleave="document.getElementById('drop-zone-${cIdx}').style.background='transparent';"
+                        ondrop="dropItem(event,${cIdx}); document.getElementById('drop-zone-${cIdx}').style.background='transparent';"
+                        style="border-radius:8px; min-height:8px; transition:0.2s;">
+                        ${cat.items.map((item, iIdx) => `
+                            <div class="sidebar-item" id="side-${item.id}"
+                                draggable="true"
+                                ondragstart="dragItem(event,${cIdx},${iIdx})"
+                                onclick="openEditor(${cIdx},${iIdx})"
+                                style="display:flex; align-items:center; gap:6px; padding:6px 8px; cursor:pointer;">
+                                <span style="color:#ccc; cursor:grab; font-size:15px;" title="גרור">⠿</span>
+                                <span style="flex:1; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.name}</span>
+                                <button onclick="event.stopPropagation(); promptRenameMenuItem(${cIdx},${iIdx});"
+                                    title="ערוך שם" style="border:none;background:none;cursor:pointer;color:#aaa;font-size:14px;padding:2px;line-height:1;">✏️</button>
+                                <button onclick="event.stopPropagation(); deleteMenuItem(${cIdx},${iIdx});"
+                                    title="מחק מוצר" style="border:none;background:none;cursor:pointer;color:#ff6b6b;font-size:14px;padding:2px;line-height:1;">🗑️</button>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <button class="add-btn-small" style="width:100%; font-size:11px; margin-top:4px;" onclick="addMenuItem(${cIdx})">+ מוצר חדש</button>
+                </div>
             </div>
-            <button class="add-btn-small" style="width:100%; font-size:11px;" onclick="addMenuItem(${cIdx})">+ מוצר חדש</button>
         `).join('');
 
         updateStats();
@@ -968,6 +1000,10 @@
     function addBankCategory() { const n = prompt("שם קטגוריה:"); if(n) { state.bank.push({cat:n, items:[]}); render(); save(); } }
     function addMenuCategory() { const n = prompt("שם קטגוריה:"); if(n) { state.menu.push({cat:n, items:[]}); render(); save(); } }
     function renameCategory(cIdx, val) { if(val.trim()) { state.menu[cIdx].cat = val.trim(); save(); } }
+    function promptRenameCategory(cIdx) {
+        const n = prompt("שם חדש לקטגוריה:", state.menu[cIdx].cat);
+        if (n && n.trim()) { state.menu[cIdx].cat = n.trim(); save(); render(); }
+    }
     function renameMenuItem(cIdx, iIdx, val) { if(val.trim()) { state.menu[cIdx].items[iIdx].name = val.trim(); save(); } }
 
     function promptRenameMenuItem(cIdx, iIdx) {
@@ -1087,9 +1123,12 @@
         document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
         const area = document.getElementById('product-editor-area');
         area.style.display = 'none';
+        const layout = document.getElementById('mgmt-layout');
+        layout.style.alignItems = 'flex-start';
         const sidebar = document.getElementById('sidebar-menu-list');
         sidebar.style.width = '100%';
         sidebar.style.maxWidth = '100%';
+        sidebar.style.flex = '';
     }
 
     function openEditor(cIdx, iIdx) {
@@ -1097,11 +1136,11 @@
         const item = state.menu[cIdx].items[iIdx];
         document.getElementById(`side-${item.id}`).classList.add('active');
         const area = document.getElementById('product-editor-area');
-        // מציג את הלייאאוט עם שני הצדדים
         area.style.display = 'block';
         const sidebar = document.getElementById('sidebar-menu-list');
-        sidebar.style.width = '300px';
-        sidebar.style.maxWidth = '300px';
+        sidebar.style.width = '320px';
+        sidebar.style.maxWidth = '320px';
+        sidebar.style.flex = '0 0 320px';
 
         if (!item.options) _editorTab = 'base';
         else if (_editorTab !== 'base' && !item.options.includes(_editorTab)) _editorTab = 'base';
