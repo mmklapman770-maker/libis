@@ -308,11 +308,9 @@
     <div style="margin-bottom:16px;">
         <button class="add-btn-small" onclick="addMenuCategory()">+ קטגוריה חדשה בתפריט</button>
     </div>
-    <div class="mgmt-layout">
-        <div class="sidebar" id="sidebar-menu-list"></div>
-        <div id="product-editor-area" style="flex:1; background:white; border-radius:var(--radius); padding:25px; box-shadow:var(--shadow); overflow-y:auto;">
-            <div style="text-align:center; margin-top:100px; color:#aaa;">בחר מוצר לעריכה</div>
-        </div>
+    <div class="mgmt-layout" id="mgmt-layout">
+        <div class="sidebar" id="sidebar-menu-list" style="width:100%; max-width:100%;"></div>
+        <div id="product-editor-area" style="display:none; flex:1; background:white; border-radius:var(--radius); padding:25px; box-shadow:var(--shadow); overflow-y:auto;"></div>
     </div>
 </div>
 
@@ -982,8 +980,7 @@
         const item = state.menu[cIdx].items[iIdx];
         if (confirm(`למחוק את "${item.name}"?`)) {
             state.menu[cIdx].items.splice(iIdx, 1);
-            save(); render();
-            document.getElementById('product-editor-area').innerHTML = '<div style="text-align:center; margin-top:100px; color:#aaa;">בחר מוצר לעריכה</div>';
+            save(); render(); closeEditor();
         }
     }
 
@@ -1086,11 +1083,25 @@
             </div>`;
     }
 
+    function closeEditor() {
+        document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
+        const area = document.getElementById('product-editor-area');
+        area.style.display = 'none';
+        const sidebar = document.getElementById('sidebar-menu-list');
+        sidebar.style.width = '100%';
+        sidebar.style.maxWidth = '100%';
+    }
+
     function openEditor(cIdx, iIdx) {
         document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
         const item = state.menu[cIdx].items[iIdx];
         document.getElementById(`side-${item.id}`).classList.add('active');
         const area = document.getElementById('product-editor-area');
+        // מציג את הלייאאוט עם שני הצדדים
+        area.style.display = 'block';
+        const sidebar = document.getElementById('sidebar-menu-list');
+        sidebar.style.width = '300px';
+        sidebar.style.maxWidth = '300px';
 
         if (!item.options) _editorTab = 'base';
         else if (_editorTab !== 'base' && !item.options.includes(_editorTab)) _editorTab = 'base';
@@ -1124,6 +1135,7 @@
                 ? `<p style="color:#888;font-size:12px;margin-bottom:10px;">💡 חומרים כאן מתווספים <b>על גבי הבסיס המשותף</b> עבור מילוי זה.</p>` : '';
 
             area.innerHTML = `
+                <button onclick="closeEditor()" style="background:none;border:none;color:#aaa;cursor:pointer;font-size:13px;padding:0;margin-bottom:14px;display:flex;align-items:center;gap:4px;font-family:'Heebo';">← חזרה לרשימה</button>
                 <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
                     <h2 style="margin:0;">${item.name}</h2>
                     <div style="text-align:left;background:#f8f8f8;padding:10px 16px;border-radius:10px;font-size:13px;">
