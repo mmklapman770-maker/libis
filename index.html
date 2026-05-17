@@ -300,8 +300,16 @@
 
 <div class="summary-footer">
     <div class="footer-stats">
-        <span class="stat-label">סה"כ הזמנה</span>
-        <span class="stat-value" id="stat-total-rev">0 ₪</span>
+        <div style="display:flex;gap:18px;align-items:flex-end;">
+            <div>
+                <span class="stat-label">סה"כ הזמנה</span><br>
+                <span class="stat-value" id="stat-total-rev">0 ₪</span>
+            </div>
+            <div>
+                <span class="stat-label">רווח משוער</span><br>
+                <span class="stat-value" id="stat-total-profit" style="color:var(--gold);">0 ₪</span>
+            </div>
+        </div>
     </div>
     <div class="footer-actions">
         <div class="save-dropdown-wrap">
@@ -730,6 +738,7 @@
         cont.innerHTML = filtered.map(order => {
             const itemCount = order.items ? order.items.length : 0;
             const isDone = order.status === 'done';
+            const stats = order.items ? calcOrderProfit(order.items) : { rev: order.total||0, profit: 0 };
             const borderColor = isDone ? '#2e7d32' : _savedTab==='draft' ? '#c8941a' : '#e8e8e8';
             const doneDate = order.doneAt ? new Date(order.doneAt).toLocaleDateString('he-IL') : '';
             const nextStatus = isDone ? 'future' : 'done';
@@ -764,9 +773,10 @@
                         ${order.custLoc  ? `&nbsp;📍 ${order.custLoc}` : ''}
                         ${order.custPhone? `&nbsp;📞 ${order.custPhone}` : ''}
                     </div>
-                    <div style="font-size:11px;color:#aaa;margin-top:2px;">
-                        ${itemCount} פריטים &nbsp;|&nbsp;
-                        <b style="color:var(--teal);">${(order.total||0).toLocaleString()} ₪</b>
+                    <div style="font-size:11px;color:#aaa;margin-top:2px;display:flex;gap:10px;flex-wrap:wrap;">
+                        <span>${itemCount} פריטים</span>
+                        <span>סה"כ: <b style="color:var(--teal);">${stats.rev.toLocaleString()} ₪</b></span>
+                        ${stats.profit > 0 ? `<span>רווח: <b style="color:var(--gold);">${Math.round(stats.profit).toLocaleString()} ₪</b></span>` : ''}
                     </div>
                     <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:8px;">
                         <button class="btn-order-action c-teal"   onclick="loadSavedOrder(${order.id})">✏️ עריכה</button>
@@ -1188,12 +1198,25 @@
     }
 
     function getOrderItemRecipes(mi, o) {
-        // מחזיר את כל המתכונים הרלוונטיים: בסיס + אופציה (אם נבחרה)
         const recipes = [...mi.recipe];
         if (o.option && mi.optionRecipes && mi.optionRecipes[o.option]) {
             recipes.push(...mi.optionRecipes[o.option]);
         }
         return recipes;
+    }
+
+    function calcOrderProfit(orderItems) {
+        let rev = 0, cost = 0;
+        orderItems.forEach(o => {
+            const mi = state.menu.flatMap(c => c.items).find(m => m.id === o.menuId);
+            if (!mi) return;
+            rev += mi.price * o.qty;
+            getOrderItemRecipes(mi, o).forEach(r => {
+                const bi = state.bank.flatMap(bc => bc.items).find(b => b.id === r.bankId);
+                if (bi) cost += (bi.price * r.qty) * o.qty;
+            });
+        });
+        return { rev, cost, profit: rev - cost };
     }
 
     function updateStats() {
@@ -1208,6 +1231,7 @@
             });
         });
         document.getElementById('stat-total-rev').innerText = rev.toLocaleString() + ' ₪';
+        document.getElementById('stat-total-profit').innerText = (rev - cost).toLocaleString() + ' ₪';
     }
 
     function openPrintWindow(html) {
