@@ -110,6 +110,21 @@
         .btn-export-main:active { transform: translateY(0); }
         .btn-export-main .btn-icon { font-size: 18px; }
 
+        /* כפתורי פעולה בהזמנות שמורות — שקוף עם מסגרת */
+        .btn-order-action {
+            display: inline-flex; align-items: center; gap: 5px;
+            background: transparent; border: 1.5px solid currentColor;
+            padding: 6px 12px; border-radius: 20px;
+            font-family: 'Heebo'; font-size: 12px; font-weight: 700;
+            cursor: pointer; transition: all 0.2s; white-space: nowrap;
+        }
+        .btn-order-action:hover { opacity: 0.75; transform: translateY(-1px); }
+        .btn-order-action.c-teal   { color: var(--teal); }
+        .btn-order-action.c-purple { color: #7b5ea7; }
+        .btn-order-action.c-dark   { color: #37474f; }
+        .btn-order-action.c-green  { color: #2e7d32; }
+        .btn-order-action.c-red    { color: #e53935; }
+
         .delete-btn { color: #ff4d4d; border: none; background: none; cursor: pointer; font-weight: bold; font-size: 18px; }
         .add-btn-small { background: var(--teal-light); color: var(--teal); border: none; padding: 8px 15px; border-radius: 50px; cursor: pointer; font-weight: 700; margin-bottom: 10px; font-family: 'Heebo'; }
 
@@ -554,12 +569,12 @@ function saveCurrentOrder() {
                         </div>
                         <div style="font-size:12px;color:#aaa;margin-top:4px;">נשמרה ב־${order.createdAt} | ${itemCount} פריטים | סה"כ ${(order.total||0).toLocaleString()} ₪</div>
                     </div>
-                    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-                        <button class="btn-export-main" style="background:var(--teal);" onclick="loadSavedOrder(${order.id})"><span class="btn-icon">✏️</span><span class="btn-text"> טען לעריכה</span></button>
-                        <button class="btn-export-main" style="background:#7b5ea7;" onclick="duplicateSavedOrder(${order.id})"><span class="btn-icon">📋</span><span class="btn-text"> שכפל</span></button>
-                        <button class="btn-export-main" style="background:#37474f;" onclick="loadAndExport(${order.id},'invoice')"><span class="btn-icon">📄</span><span class="btn-text"> הפק PDF</span></button>
-                        <button class="btn-export-main" style="background:#2e7d32;" onclick="loadAndExport(${order.id},'shopping')"><span class="btn-icon">🛒</span><span class="btn-text"> רשימת קניות</span></button>
-                        <button class="btn-export-main" style="background:#e53935;" onclick="deleteSavedOrder(${order.id})"><span class="btn-icon">🗑️</span><span class="btn-text"> מחק</span></button>
+                    <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:4px;">
+                        <button class="btn-order-action c-teal"   onclick="loadSavedOrder(${order.id})">✏️ עריכה</button>
+                        <button class="btn-order-action c-purple" onclick="duplicateSavedOrder(${order.id})">📋 שכפול</button>
+                        <button class="btn-order-action c-dark"   onclick="loadAndExport(${order.id},'invoice')">📄 PDF</button>
+                        <button class="btn-order-action c-green"  onclick="loadAndExport(${order.id},'shopping')">🛒 קניות</button>
+                        <button class="btn-order-action c-red"    onclick="deleteSavedOrder(${order.id})">🗑️ מחיקה</button>
                     </div>
                 </div>
             </div>`;
