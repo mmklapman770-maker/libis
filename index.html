@@ -554,8 +554,8 @@
         const rules = [
             { k:['פסט','ספגטי','קרבונ','ניוקי','לזנ'],  id:'1473093226795-af9932fe5856' },
             { k:['סלט'],                                  id:'1512621776951-a57141f2eefd' },
-            { k:['קיש','פשטיד'],                          id:'1565299507177-d366a2a2ef43' },
-            { k:['כריכ','פוקצ','כריך','מקל'],            id:'1549931319-a545dcf3bc7f'  },
+            { k:['קיש','פשטיד'],                          id:'1504674900247-0877df9cc836' },
+            { k:['כריכ','פוקצ','כריך','מקל'],            id:'1509440159596-0249088772ff' },
             { k:['דג','סלמון','מושט','פורל','טונ'],       id:'1519708227418-c8fd9a32b7a2' },
             { k:['עוף','פרגית','שניצ'],                   id:'1598103442097-8b74394b95c3' },
             { k:['בשר','סטייק','המבורג','כבד'],           id:'1529193591184-b1d58069ecdd' },
@@ -563,7 +563,7 @@
             { k:['ירק','צלוי','בטט'],                     id:'1540420773420-3366772f4999' },
             { k:['מרק','סופ'],                            id:'1547592166-23ac45744acd'  },
             { k:['אורז','קוסקוס','בורגול'],              id:'1536304929831-ee1ca9d44906' },
-            { k:['טורטי','בורית','פיתה'],                 id:'1565299624596-706b8e4c1c07' },
+            { k:['טורטי','בורית','פיתה'],                 id:'1476224203421-9ac39bcb3327' },
             { k:['גבינ','חביתה','ביצ'],                  id:'1525351484163-7529414f2171' },
         ];
         const BASE = 'https://images.unsplash.com/photo-';
@@ -572,7 +572,6 @@
             if (rule.k.some(k => name.includes(k)))
                 return BASE + rule.id + PARAMS;
         }
-        // ברירת מחדל — שולחן עם אוכל
         return BASE + '1414235077428-338989a2e8c0' + PARAMS;
     }
 
@@ -838,7 +837,10 @@
         const orderCont = document.getElementById('order-products-container');
         orderCont.innerHTML = state.menu.map(cat => `
             <div class="card" style="padding-top:0; overflow:hidden;">
-                <div class="cat-banner" style="background-image:url('${getCategoryImage(cat.cat)}')">
+                <div class="cat-banner" id="banner-${cat.cat.replace(/\s/g,'')}">
+                    <img src="${getCategoryImage(cat.cat)}"
+                         style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"
+                         onerror="this.style.display='none'; this.parentElement.style.background='linear-gradient(135deg,#006b78,#008291)';">
                     <div class="cat-banner-overlay">
                         <h3 class="cat-banner-title">${cat.cat}</h3>
                     </div>
