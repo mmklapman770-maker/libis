@@ -51,7 +51,8 @@
         .login-error { color: #e53935; font-size: 13px; margin-top: 10px; min-height: 18px; font-weight: 700; }
         #app-content { display: none; }
         .header { text-align: center; background: var(--teal); padding: 18px 25px; border-bottom: 5px solid var(--gold); }
-        .header img { height: 65px; }
+        .header-logo { height: 65px; display: block; margin: 0 auto; }
+        .header-text { display: none; color: white; font-size: 22px; font-weight: 900; letter-spacing: 1px; }
 
         .nav-main { display: flex; justify-content: center; align-items: center; gap: 8px; padding: 12px 20px; background: white; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 12px rgba(0,0,0,0.08); flex-wrap: wrap; }
         .nav-btn { padding: 10px 22px; border: none; border-radius: 50px; cursor: pointer; font-weight: 700; background: #f0f0f0; color: #555; transition: 0.25s; font-family: 'Heebo'; font-size: 14px; white-space: nowrap; }
@@ -97,18 +98,17 @@
         }
         .footer-stats .stat-label { font-size: 11px; color: #999; font-weight: 500; }
         .footer-stats .stat-value { font-size: 17px; font-weight: 900; color: var(--teal); }
-        .footer-actions { display: flex; gap: 10px; align-items: center; }
+        .footer-actions { display: flex; gap: 8px; align-items: center; }
         .btn-export-main {
-            display: flex; align-items: center; gap: 8px;
-            background: var(--teal); color: white;
-            border: none; padding: 12px 22px; border-radius: 14px;
-            font-weight: 700; cursor: pointer; font-family: 'Heebo'; font-size: 14px;
-            transition: all 0.2s; box-shadow: 0 4px 14px rgba(0,130,145,0.25);
-            white-space: nowrap;
+            display: flex; align-items: center; gap: 7px;
+            background: transparent; color: var(--teal);
+            border: 2px solid var(--teal); padding: 9px 18px; border-radius: 50px;
+            font-weight: 700; cursor: pointer; font-family: 'Heebo'; font-size: 13px;
+            transition: all 0.2s; white-space: nowrap;
         }
-        .btn-export-main:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,130,145,0.35); filter: brightness(1.08); }
+        .btn-export-main:hover { background: var(--teal); color: white; transform: translateY(-1px); box-shadow: 0 4px 14px rgba(0,130,145,0.25); }
         .btn-export-main:active { transform: translateY(0); }
-        .btn-export-main .btn-icon { font-size: 18px; }
+        .btn-export-main .btn-icon { font-size: 16px; }
 
         /* תפריט שמור נפתח */
         .save-dropdown-wrap { position: relative; }
@@ -174,8 +174,9 @@
 
         /* ===== מובייל טאבלט ===== */
         @media (max-width: 768px) {
-            .header { padding: 12px 10px; }
-            .header img { height: 48px; }
+            .header { padding: 10px 16px; }
+            .header-logo { display: none; }
+            .header-text { display: block; }
 
             /* תפריט: שורה אחת עם גלילה אופקית */
             .nav-main {
@@ -213,16 +214,11 @@
         /* ===== מובייל קטן ===== */
         @media (max-width: 480px) {
             .order-info-grid { grid-template-columns: 1fr 1fr; }
-
-            /* פוטר — כפתורים עם אייקון בלבד */
             .summary-footer { padding: 8px 10px; }
-            .btn-export-main .btn-text { display: none; }
-            .btn-export-main { padding: 10px 13px; border-radius: 12px; }
-            .btn-export-main .btn-icon { font-size: 20px; }
+            .btn-export-main { padding: 7px 12px; font-size: 12px; border-width: 1.5px; }
+            .btn-export-main .btn-icon { font-size: 14px; }
             .footer-stats .stat-label { font-size: 10px; }
             .footer-stats .stat-value { font-size: 14px; }
-
-            /* כרטיסי הזמנה */
             .card { padding: 12px; }
         }
     </style>
@@ -256,7 +252,8 @@
 <div id="app-content">
 
 <div class="header">
-    <img src="libis-logo.png" alt="Libis Logo">
+    <img src="libis-logo.png" alt="Libis Logo" class="header-logo">
+    <div class="header-text">ליביס</div>
 </div>
 
 <div class="nav-main">
