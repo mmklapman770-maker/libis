@@ -77,8 +77,33 @@
         .sidebar-item { padding: 10px; cursor: pointer; border-radius: 8px; margin-bottom: 5px; font-size: 14px; border-bottom: 1px solid #f9f9f9; }
         .sidebar-item.active { background: var(--teal-light); color: var(--teal); font-weight: 700; border-right: 4px solid var(--teal); }
 
-        .summary-footer { position: fixed; bottom: 0; width: 100%; background: var(--teal); color: white; padding: 20px; display: flex; justify-content: space-around; align-items: center; z-index: 1001; }
-        .btn-export-main { background: var(--gold); color: white; border: none; padding: 14px 30px; border-radius: 50px; font-weight: 900; cursor: pointer; transition: 0.3s; font-family: 'Heebo'; }
+        .summary-footer {
+            position: fixed; bottom: 0; width: 100%; z-index: 1001;
+            background: rgba(255,255,255,0.92);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border-top: 1px solid rgba(0,130,145,0.15);
+            box-shadow: 0 -4px 30px rgba(0,0,0,0.1);
+            padding: 14px 24px;
+            display: flex; justify-content: space-between; align-items: center; gap: 12px;
+        }
+        .footer-stats {
+            display: flex; flex-direction: column; gap: 2px;
+        }
+        .footer-stats .stat-label { font-size: 11px; color: #999; font-weight: 500; }
+        .footer-stats .stat-value { font-size: 17px; font-weight: 900; color: var(--teal); }
+        .footer-actions { display: flex; gap: 10px; align-items: center; }
+        .btn-export-main {
+            display: flex; align-items: center; gap: 8px;
+            background: var(--teal); color: white;
+            border: none; padding: 12px 22px; border-radius: 14px;
+            font-weight: 700; cursor: pointer; font-family: 'Heebo'; font-size: 14px;
+            transition: all 0.2s; box-shadow: 0 4px 14px rgba(0,130,145,0.25);
+            white-space: nowrap;
+        }
+        .btn-export-main:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,130,145,0.35); filter: brightness(1.08); }
+        .btn-export-main:active { transform: translateY(0); }
+        .btn-export-main .btn-icon { font-size: 18px; }
 
         .delete-btn { color: #ff4d4d; border: none; background: none; cursor: pointer; font-weight: bold; font-size: 18px; }
         .add-btn-small { background: var(--teal-light); color: var(--teal); border: none; padding: 8px 15px; border-radius: 50px; cursor: pointer; font-weight: 700; margin-bottom: 10px; font-family: 'Heebo'; }
@@ -105,9 +130,11 @@
             .mgmt-layout { flex-direction: column; height: auto; }
             .sidebar { width: 100%; height: auto; max-height: 220px; }
 
-            .summary-footer { padding: 10px 12px; flex-wrap: wrap; gap: 8px; justify-content: center; }
-            .summary-footer > div:first-child { width: 100%; text-align: center; font-size: 14px; }
-            .btn-export-main { padding: 10px 16px; font-size: 13px; }
+            .summary-footer { padding: 10px 14px; gap: 8px; }
+            .footer-actions { gap: 7px; }
+            .btn-export-main { padding: 10px 14px; font-size: 13px; border-radius: 12px; gap: 5px; }
+            .btn-export-main .btn-icon { font-size: 15px; }
+            .footer-stats .stat-value { font-size: 15px; }
 
             .nav-btn { flex: 1 1 auto; min-width: 80px; text-align: center; }
         }
@@ -189,11 +216,20 @@
 </div>
 
 <div class="summary-footer">
-    <div>סה"כ: <b id="stat-total-rev">0 ₪</b> | רווח: <b id="stat-total-profit">0 ₪</b></div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
-        <button class="btn-export-main" style="background:#2e7d32;" onclick="saveCurrentOrder()">💾 שמור הזמנה</button>
-        <button class="btn-export-main" onclick="generatePDF('invoice')">הפק הזמנה (PDF)</button>
-        <button class="btn-export-main" style="background:#444;" onclick="generatePDF('shopping')">רשימת קניות</button>
+    <div class="footer-stats">
+        <span class="stat-label">סה"כ הזמנה</span>
+        <span class="stat-value" id="stat-total-rev">0 ₪</span>
+    </div>
+    <div class="footer-actions">
+        <button class="btn-export-main" onclick="saveCurrentOrder()">
+            <span class="btn-icon">💾</span> שמור
+        </button>
+        <button class="btn-export-main" onclick="generatePDF('invoice')">
+            <span class="btn-icon">📄</span> הפק הזמנה
+        </button>
+        <button class="btn-export-main" onclick="generatePDF('shopping')">
+            <span class="btn-icon">🛒</span> רשימת קניות
+        </button>
     </div>
 </div>
 
@@ -924,8 +960,7 @@ function saveCurrentOrder() {
                 if (bi) cost += (bi.price * r.qty) * o.qty;
             });
         });
-        document.getElementById('stat-total-rev').innerText = rev + ' ₪';
-        document.getElementById('stat-total-profit').innerText = (rev - cost).toFixed(2) + ' ₪';
+        document.getElementById('stat-total-rev').innerText = rev.toLocaleString() + ' ₪';
     }
 
     function openPrintWindow(html) {
