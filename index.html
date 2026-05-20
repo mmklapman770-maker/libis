@@ -104,6 +104,16 @@
         }
         .sidebar-cat-rename-btn:hover { background: rgba(255,255,255,0.2); }
 
+        /* מודל רשימת קניות */
+        .shop-check-row {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 14px; border: 1.5px solid #e8e8e8; border-radius: 10px;
+            cursor: pointer; transition: 0.15s;
+        }
+        .shop-check-row:hover { border-color: var(--teal); background: var(--teal-light); }
+        .shop-check-row input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--teal); cursor: pointer; flex-shrink: 0; }
+        .shop-check-label { font-size: 14px; flex: 1; }
+
         .summary-footer {
             position: fixed; bottom: 0; width: 100%; z-index: 1001;
             background: rgba(255,255,255,0.92);
@@ -314,6 +324,22 @@
         <input type="text" id="cust-phone" placeholder="טלפון">
     </div>
     <div id="order-products-container"></div>
+    <!-- תוספת תשלום -->
+    <div class="card" style="margin-top:10px;">
+        <label style="display:block; font-weight:700; color:var(--teal); margin-bottom:12px; font-size:15px;">💳 תוספת תשלום (אופציונלי)</label>
+        <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+            <input id="extra-charge-label" type="text" placeholder="תיאור (למשל: משלוח, תוספת שירות...)"
+                oninput="updateStats()"
+                style="flex:2; min-width:180px; padding:11px 14px; border:1px solid #ddd; border-radius:10px; font-family:'Heebo'; font-size:14px;">
+            <div style="display:flex; align-items:center; gap:6px; flex:0 0 auto;">
+                <input id="extra-charge-amount" type="number" min="0" placeholder="0"
+                    oninput="updateStats()"
+                    style="width:110px; padding:11px 14px; border:1px solid #ddd; border-radius:10px; font-family:'Heebo'; font-size:14px; text-align:center;">
+                <span style="font-size:16px; font-weight:700; color:#666;">₪</span>
+            </div>
+        </div>
+    </div>
+    <!-- הערות -->
     <div class="card" style="margin-top:10px;">
         <label style="display:block; font-weight:700; color:var(--teal); margin-bottom:10px; font-size:15px;">📝 הערות כלליות להזמנה</label>
         <textarea id="order-notes" rows="4" placeholder="הערות, בקשות מיוחדות, פרטים נוספים..."
@@ -524,25 +550,36 @@
 
     let _editorTab = 'base';
 
+    // Firebase מחזיר אובייקטים במקום מערכים — הפונקציה הזו מתקנת את זה
+    function toArr(v) {
+        if (!v) return [];
+        if (Array.isArray(v)) return v;
+        return Object.values(v);
+    }
+
     function sanitizeState(s) {
         if (!s) return s;
-        if (!s.menu) s.menu = [];
+        s.menu = toArr(s.menu);
         s.menu.forEach(cat => {
-            if (!cat.items) cat.items = [];
+            cat.items = toArr(cat.items);
             cat.items.forEach(item => {
-                if (!item.recipe) item.recipe = [];
+                item.recipe = toArr(item.recipe);
                 if (item.options) {
+                    item.options = toArr(item.options);
                     if (!item.optionRecipes) item.optionRecipes = {};
                     item.options.forEach(opt => {
-                        if (!item.optionRecipes[opt]) item.optionRecipes[opt] = [];
+                        item.optionRecipes[opt] = toArr(item.optionRecipes[opt]);
                     });
                 }
             });
         });
-        if (!s.bank) s.bank = [];
-        s.bank.forEach(cat => { if (!cat.items) cat.items = []; });
-        if (!s.savedOrders) s.savedOrders = [];
-        s.savedOrders.forEach(o => { if (!o.status) o.status = 'future'; });
+        s.bank = toArr(s.bank);
+        s.bank.forEach(cat => { cat.items = toArr(cat.items); });
+        s.savedOrders = toArr(s.savedOrders);
+        s.savedOrders.forEach(o => {
+            if (!o.status) o.status = 'future';
+            if (o.items) o.items = toArr(o.items);
+        });
         return s;
     }
 
@@ -612,17 +649,21 @@
         const custLoc   = document.getElementById('cust-loc').value   || '';
         const custPhone = document.getElementById('cust-phone').value || '';
         const custNotes = document.getElementById('order-notes').value || '';
+        const extraLabel  = document.getElementById('extra-charge-label')?.value  || '';
+        const extraAmount = parseFloat(document.getElementById('extra-charge-amount')?.value) || 0;
         if (!state.savedOrders) state.savedOrders = [];
         let total = 0;
         orderItems.forEach(o => {
             const mi = state.menu.flatMap(c => c.items).find(m => m.id === o.menuId);
             if (mi) total += mi.price * o.qty;
         });
+        total += extraAmount;
         const ts = Date.now();
         state.savedOrders.unshift({
             id: ts, timestamp: ts,
             createdAt: new Date().toLocaleDateString('he-IL'),
             custName, custDate, custLoc, custPhone, custNotes,
+            extraLabel, extraAmount,
             status, total,
             items: JSON.parse(JSON.stringify(orderItems))
         });
@@ -641,6 +682,8 @@
         document.getElementById('cust-loc').value    = order.custLoc   || '';
         document.getElementById('cust-phone').value  = order.custPhone || '';
         document.getElementById('order-notes').value = order.custNotes || '';
+        if (document.getElementById('extra-charge-label'))  document.getElementById('extra-charge-label').value  = order.extraLabel  || '';
+        if (document.getElementById('extra-charge-amount')) document.getElementById('extra-charge-amount').value = order.extraAmount || '';
         // עובר לטאב יצירת הזמנה
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.container').forEach(c => c.classList.remove('active'));
@@ -824,18 +867,22 @@
         const order = state.savedOrders.find(o => o.id === id);
         if (!order) return;
         // שומר זמנית את orderItems הנוכחיים, מייצא ומחזיר
-        const prevItems = orderItems;
-        const prevName  = document.getElementById('cust-name').value;
-        const prevDate  = document.getElementById('cust-date').value;
-        const prevLoc   = document.getElementById('cust-loc').value;
-        const prevPhone = document.getElementById('cust-phone').value;
-        const prevNotes = document.getElementById('order-notes').value;
+        const prevItems       = orderItems;
+        const prevName        = document.getElementById('cust-name').value;
+        const prevDate        = document.getElementById('cust-date').value;
+        const prevLoc         = document.getElementById('cust-loc').value;
+        const prevPhone       = document.getElementById('cust-phone').value;
+        const prevNotes       = document.getElementById('order-notes').value;
+        const prevExtraLabel  = document.getElementById('extra-charge-label')?.value  || '';
+        const prevExtraAmount = document.getElementById('extra-charge-amount')?.value || '';
         orderItems = JSON.parse(JSON.stringify(order.items));
         document.getElementById('cust-name').value   = order.custName  || '';
         document.getElementById('cust-date').value   = order.custDate  || '';
         document.getElementById('cust-loc').value    = order.custLoc   || '';
         document.getElementById('cust-phone').value  = order.custPhone || '';
         document.getElementById('order-notes').value = order.custNotes || '';
+        if (document.getElementById('extra-charge-label'))  document.getElementById('extra-charge-label').value  = order.extraLabel  || '';
+        if (document.getElementById('extra-charge-amount')) document.getElementById('extra-charge-amount').value = order.extraAmount || '';
         generatePDF(type);
         // מחזיר למצב קודם
         orderItems = prevItems;
@@ -844,6 +891,8 @@
         document.getElementById('cust-loc').value    = prevLoc;
         document.getElementById('cust-phone').value  = prevPhone;
         document.getElementById('order-notes').value = prevNotes;
+        if (document.getElementById('extra-charge-label'))  document.getElementById('extra-charge-label').value  = prevExtraLabel;
+        if (document.getElementById('extra-charge-amount')) document.getElementById('extra-charge-amount').value = prevExtraAmount;
     }
 
     function addToOrder(id) { orderItems.push({menuId: id, option: "", note: "", qty: 1}); render(); }
@@ -1272,8 +1321,10 @@
                 if (bi) cost += (bi.price * r.qty) * o.qty;
             });
         });
-        document.getElementById('stat-total-rev').innerText = rev.toLocaleString() + ' ₪';
-        document.getElementById('stat-total-profit').innerText = (rev - cost).toLocaleString() + ' ₪';
+        const extra = parseFloat(document.getElementById('extra-charge-amount')?.value) || 0;
+        const total = rev + extra;
+        document.getElementById('stat-total-rev').innerText = total.toLocaleString() + ' ₪';
+        document.getElementById('stat-total-profit').innerText = (total - cost).toLocaleString() + ' ₪';
     }
 
     function openPrintWindow(html) {
@@ -1286,45 +1337,98 @@
     function generatePDF(type) {
         const logoUrl = window.location.origin + '/libis-logo.png';
         const baseStyles = `
-            @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap');
+            @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap');
             * { box-sizing: border-box; margin: 0; padding: 0; }
-            body { font-family: 'Heebo', Arial, sans-serif; direction: rtl; color: #333; background: white; }
-            .page { width: 210mm; min-height: 297mm; padding: 12mm 15mm; margin: 0 auto; position: relative; }
-            .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 4px solid #c8941a; padding-bottom: 15px; margin-bottom: 20px; }
-            .header-logo img { height: 65px; }
-            .header-title { text-align: center; flex: 1; }
-            .header-title h1 { font-size: 22px; color: #008291; font-weight: 900; margin-bottom: 3px; }
-            .header-title p { font-size: 12px; color: #888; }
-            .doc-number { text-align: left; font-size: 12px; color: #888; }
-            .customer-box { background: #f0f8f9; border: 1px solid #c5e8ec; border-radius: 8px; padding: 14px 18px; margin-bottom: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px 30px; }
-            .customer-box .field { display: flex; align-items: baseline; gap: 6px; font-size: 13px; }
-            .customer-box .label { color: #008291; font-weight: 700; white-space: nowrap; }
-            .customer-box .value { border-bottom: 1px solid #bbb; flex: 1; min-width: 80px; padding-bottom: 1px; }
-            table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 20px; }
+            body { font-family: 'Heebo', Arial, sans-serif; direction: rtl; color: #222; background: white; }
+            .page { width: 210mm; min-height: 297mm; padding: 0; margin: 0 auto; position: relative; }
+
+            /* כותרת ירוקה עם לוגו */
+            .pdf-header {
+                background: #008291; color: white;
+                padding: 18px 22mm; display: flex; align-items: center; justify-content: space-between;
+            }
+            .pdf-header-logo img { height: 52px; filter: brightness(0) invert(1); }
+            .pdf-header-center { text-align: center; }
+            .pdf-header-center h1 { font-size: 24px; font-weight: 900; letter-spacing: 0.5px; }
+            .pdf-header-center p { font-size: 12px; opacity: 0.85; margin-top: 3px; }
+            .pdf-header-meta { text-align: left; font-size: 11px; opacity: 0.85; line-height: 1.8; }
+
+            /* פס זהב דק מתחת לכותרת */
+            .pdf-gold-bar { height: 5px; background: #c8941a; }
+
+            .pdf-body { padding: 14mm 22mm 20mm; }
+
+            /* כרטיס לקוח */
+            .customer-card {
+                border: 1.5px solid #e0f2f4; border-radius: 10px;
+                padding: 14px 18px; margin-bottom: 22px;
+                display: grid; grid-template-columns: 1fr 1fr; gap: 10px 40px;
+                background: #f9fdfd;
+            }
+            .cfield { display: flex; gap: 8px; align-items: baseline; font-size: 13px; }
+            .clabel { color: #008291; font-weight: 700; white-space: nowrap; min-width: 80px; }
+            .cvalue { border-bottom: 1px dashed #bdd; flex: 1; padding-bottom: 1px; color: #333; }
+
+            /* טבלת מוצרים */
+            table { width: 100%; border-collapse: collapse; font-size: 12.5px; margin-bottom: 0; }
             thead tr { background: #008291; color: white; }
-            thead th { padding: 10px 12px; text-align: right; font-weight: 700; }
-            tbody tr:nth-child(even) { background: #f7fbfc; }
-            tbody td { padding: 9px 12px; border-bottom: 1px solid #e8e8e8; }
-            .td-center { text-align: center; }
-            .total-box { display: flex; justify-content: flex-start; align-items: center; background: #008291; color: white; border-radius: 8px; padding: 14px 20px; gap: 15px; }
-            .total-box .total-label { font-size: 16px; font-weight: 700; }
-            .total-box .total-amount { font-size: 22px; font-weight: 900; }
-            .signature-section { display: flex; justify-content: space-between; margin-top: 30px; gap: 30px; }
-            .sig-block { flex: 1; text-align: center; font-size: 12px; color: #666; }
-            .sig-line { border-top: 1px solid #bbb; margin-bottom: 6px; padding-top: 6px; }
-            .footer { position: absolute; bottom: 10mm; left: 15mm; right: 15mm; border-top: 1px solid #e0e0e0; padding-top: 8px; display: flex; justify-content: space-between; font-size: 10px; color: #aaa; }
+            thead th { padding: 9px 12px; text-align: right; font-weight: 700; font-size: 12px; }
+            tbody tr { transition: background 0.1s; }
+            tbody tr:nth-child(even) { background: #f5fafa; }
+            tbody td { padding: 8px 12px; border-bottom: 1px solid #edf4f5; font-size: 12.5px; }
+            .td-c { text-align: center; }
+            .cat-header td {
+                background: #e8f6f7 !important; color: #005f6b;
+                font-weight: 900; font-size: 12px; padding: 6px 12px;
+                letter-spacing: 0.3px; border-top: 2px solid #b2dde3;
+            }
+
+            /* סיכום */
+            .summary-wrap { margin-top: 16px; }
+            .extra-row {
+                display: flex; justify-content: space-between; align-items: center;
+                padding: 8px 16px; background: #fffbf0; border: 1px solid #f0dfa0;
+                border-radius: 8px; margin-bottom: 8px; font-size: 13px;
+            }
+            .extra-row span:first-child { color: #7c5c00; font-weight: 600; }
+            .extra-row span:last-child { font-weight: 700; color: #7c5c00; }
+            .total-row {
+                display: flex; justify-content: space-between; align-items: center;
+                background: #008291; color: white; border-radius: 10px;
+                padding: 14px 20px;
+            }
+            .total-label { font-size: 15px; font-weight: 700; }
+            .total-amount { font-size: 24px; font-weight: 900; letter-spacing: 0.5px; }
+
+            /* הערות */
+            .notes-box {
+                margin-top: 14px; padding: 12px 16px;
+                background: #fffde7; border: 1px solid #ffe082; border-radius: 8px;
+                font-size: 12.5px; white-space: pre-line; color: #444; line-height: 1.6;
+            }
+            .notes-title { font-weight: 700; color: #7c5c00; margin-bottom: 5px; font-size: 12px; }
+
+            /* חתימות */
+            .sig-section { display: flex; gap: 40px; margin-top: 28px; }
+            .sig-block { flex: 1; text-align: center; font-size: 11px; color: #888; }
+            .sig-line { border-top: 1px solid #ccc; padding-top: 5px; margin-top: 32px; }
+
+            /* פוטר */
+            .pdf-footer {
+                position: absolute; bottom: 8mm; left: 22mm; right: 22mm;
+                border-top: 1px solid #ddd; padding-top: 7px;
+                display: flex; justify-content: space-between;
+                font-size: 9.5px; color: #aaa;
+            }
+
             @media print {
                 body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-                .page { padding: 8mm 12mm; }
             }
         `;
 
         if (type === 'invoice') {
             if (orderItems.length === 0) { alert("אין פריטים בהזמנה."); return; }
-            let total = 0;
-            let rowNum = 1;
-
-            // מקבץ לפי קטגוריה
+            let subtotal = 0, rowNum = 1;
             const catMap = {};
             orderItems.forEach(o => {
                 const cat = state.menu.find(c => c.items.some(i => i.id === o.menuId));
@@ -1333,159 +1437,218 @@
                 const mi = state.menu.flatMap(c => c.items).find(m => m.id === o.menuId);
                 if (mi) catMap[catName].push({ o, mi });
             });
-
             const rows = Object.entries(catMap).map(([catName, entries]) => {
                 const catRows = entries.map(({ o, mi }) => {
                     const lineTotal = mi.price * o.qty;
-                    total += lineTotal;
+                    subtotal += lineTotal;
                     const details = [o.option, o.note].filter(Boolean).join(' | ');
                     return `<tr>
-                        <td style="text-align:center;">${rowNum++}</td>
-                        <td>${mi.name}${details ? `<br><span style="color:#888;font-size:11px;">${details}</span>` : ''}</td>
-                        <td class="td-center">${o.qty}</td>
-                        <td class="td-center">${mi.price.toLocaleString()} ₪</td>
-                        <td class="td-center" style="font-weight:700;">${lineTotal.toLocaleString()} ₪</td>
+                        <td class="td-c">${rowNum++}</td>
+                        <td>${mi.name}${details ? `<br><span style="color:#999;font-size:11px;">${details}</span>` : ''}</td>
+                        <td class="td-c">${o.qty}</td>
+                        <td class="td-c">${mi.price.toLocaleString()} ₪</td>
+                        <td class="td-c" style="font-weight:700;">${lineTotal.toLocaleString()} ₪</td>
                     </tr>`;
                 }).join('');
-                return `<tr style="background:#e3f2fd;">
-                    <td colspan="5" style="font-weight:900;color:#008291;font-size:13px;padding:8px 12px;border-top:2px solid #008291;">🔹 ${catName}</td>
-                </tr>${catRows}`;
+                return `<tr class="cat-header"><td colspan="5">${catName}</td></tr>${catRows}`;
             }).join('');
-            const custName  = document.getElementById('cust-name').value  || '';
-            const custDate  = document.getElementById('cust-date').value  || '';
-            const custLoc   = document.getElementById('cust-loc').value   || '';
-            const custPhone = document.getElementById('cust-phone').value || '';
-            const custNotes = document.getElementById('order-notes').value || '';
-            const today = new Date().toLocaleDateString('he-IL');
+            const custName   = document.getElementById('cust-name').value  || '';
+            const custDate   = document.getElementById('cust-date').value  || '';
+            const custLoc    = document.getElementById('cust-loc').value   || '';
+            const custPhone  = document.getElementById('cust-phone').value || '';
+            const custNotes  = document.getElementById('order-notes').value || '';
+            const extraLabel  = document.getElementById('extra-charge-label')?.value || '';
+            const extraAmount = parseFloat(document.getElementById('extra-charge-amount')?.value) || 0;
+            const grandTotal  = subtotal + extraAmount;
+            const today  = new Date().toLocaleDateString('he-IL');
+            const docNum = 'INV-' + Date.now().toString().slice(-6);
 
             openPrintWindow(`<!DOCTYPE html>
 <html lang="he" dir="rtl">
-<head><meta charset="UTF-8"><style>${baseStyles}</style></head>
+<head><meta charset="UTF-8"><title>הזמנת עבודה – ליביס</title><style>${baseStyles}</style></head>
 <body>
 <div class="page">
-    <div class="header">
-        <div class="header-logo"><img src="${logoUrl}" alt="ליביס" onerror="this.style.display='none'"></div>
-        <div class="header-title">
-            <h1>הזמנת עבודה</h1>
-            <p>שירותי קייטרינג פרימיום</p>
-        </div>
-        <div class="doc-number">
-            <div>תאריך הפקה: ${today}</div>
-        </div>
+  <div class="pdf-header">
+    <div class="pdf-header-logo"><img src="${logoUrl}" alt="ליביס" onerror="this.style.display='none'"></div>
+    <div class="pdf-header-center"><h1>הזמנת עבודה</h1><p>שירותי קייטרינג פרימיום · כשר</p></div>
+    <div class="pdf-header-meta"><div>מס׳ ${docNum}</div><div>${today}</div></div>
+  </div>
+  <div class="pdf-gold-bar"></div>
+  <div class="pdf-body">
+    <div class="customer-card">
+      <div class="cfield"><span class="clabel">לכבוד:</span><span class="cvalue">${custName}</span></div>
+      <div class="cfield"><span class="clabel">תאריך אירוע:</span><span class="cvalue">${custDate}</span></div>
+      <div class="cfield"><span class="clabel">מיקום:</span><span class="cvalue">${custLoc}</span></div>
+      <div class="cfield"><span class="clabel">טלפון:</span><span class="cvalue">${custPhone}</span></div>
     </div>
-
-    <div class="customer-box">
-        <div class="field"><span class="label">לכבוד:</span><span class="value">${custName}</span></div>
-        <div class="field"><span class="label">תאריך אירוע:</span><span class="value">${custDate}</span></div>
-        <div class="field"><span class="label">מיקום:</span><span class="value">${custLoc}</span></div>
-        <div class="field"><span class="label">טלפון:</span><span class="value">${custPhone}</span></div>
-    </div>
-
     <table>
-        <thead>
-            <tr>
-                <th style="width:35px;">#</th>
-                <th>תיאור המוצר</th>
-                <th class="td-center" style="width:60px;">כמות</th>
-                <th class="td-center" style="width:90px;">מחיר יחידה</th>
-                <th class="td-center" style="width:90px;">סה"כ</th>
-            </tr>
-        </thead>
-        <tbody>${rows}</tbody>
+      <thead><tr>
+        <th style="width:28px;">#</th><th>פריט</th>
+        <th class="td-c" style="width:52px;">כמות</th>
+        <th class="td-c" style="width:82px;">מחיר יח׳</th>
+        <th class="td-c" style="width:82px;">סה״כ</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
     </table>
-
-    <div class="total-box">
-        <span class="total-label">סה"כ לתשלום:</span>
-        <span class="total-amount">${total.toLocaleString()} ₪</span>
+    <div class="summary-wrap">
+      ${extraAmount > 0 ? `<div class="extra-row"><span>${extraLabel || 'תוספת תשלום'}</span><span>${extraAmount.toLocaleString()} ₪</span></div>` : ''}
+      <div class="total-row"><span class="total-label">סה״כ לתשלום</span><span class="total-amount">${grandTotal.toLocaleString()} ₪</span></div>
     </div>
-
-    ${custNotes ? `<div style="margin-bottom:20px; padding:14px 18px; background:#fffde7; border:1px solid #ffe082; border-radius:8px;">
-        <div style="font-weight:700; color:#7c5c00; margin-bottom:6px; font-size:13px;">📝 הערות:</div>
-        <div style="font-size:13px; white-space:pre-line; color:#333;">${custNotes}</div>
-    </div>` : ''}
-
-    <div class="signature-section">
-        <div class="sig-block">
-            <div style="height:40px;"></div>
-            <div class="sig-line">חתימת הלקוח</div>
-        </div>
-        <div class="sig-block">
-            <div style="height:40px;"></div>
-            <div class="sig-line">חתימת ספק – ליביס</div>
-        </div>
+    ${custNotes ? `<div class="notes-box"><div class="notes-title">📝 הערות</div>${custNotes}</div>` : ''}
+    <div class="sig-section">
+      <div class="sig-block"><div class="sig-line">חתימת הלקוח</div></div>
+      <div class="sig-block"><div class="sig-line">חתימת ספק – ליביס</div></div>
     </div>
-
-    <div class="footer">
-        <span>ליביס – שירותי קייטרינג פרימיום</span>
-        <span>הזמנה זו מהווה אסמכתא לקבלת השירות</span>
-    </div>
+  </div>
+  <div class="pdf-footer">
+    <span>ליביס – שירותי קייטרינג פרימיום</span>
+    <span>הזמנה זו מהווה אסמכתא לקבלת השירות</span>
+  </div>
 </div>
 </body></html>`);
 
         } else {
-            let list = {}, tc = 0;
-            orderItems.forEach(o => {
+            // רשימת קניות — נפתח מודל לבחירת הזמנות
+            openShoppingModal();
+        }
+    }
+
+    // ===== מודל רשימת קניות מרובת הזמנות =====
+    function openShoppingModal() {
+        const saved = (state.savedOrders || []).filter(o => o.items && o.items.length > 0);
+        const currentHasItems = orderItems.length > 0;
+
+        let orderOptions = '';
+        if (currentHasItems) {
+            orderOptions += `<label class="shop-check-row">
+                <input type="checkbox" value="__current__" checked>
+                <span class="shop-check-label">📋 הזמנה נוכחית (טרם נשמרה)</span>
+            </label>`;
+        }
+        orderOptions += saved.map(o => `
+            <label class="shop-check-row">
+                <input type="checkbox" value="${o.id}">
+                <span class="shop-check-label">
+                    <b>${o.custName || 'ללא שם'}</b>
+                    ${o.custDate ? ` · ${o.custDate}` : ''}
+                    <span style="color:#aaa;font-size:11px;"> (${o.items.length} פריטים)</span>
+                </span>
+            </label>`).join('');
+
+        if (!orderOptions) { alert("אין הזמנות עם פריטים להפקת רשימת קניות."); return; }
+
+        let modal = document.getElementById('shopping-modal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'shopping-modal';
+            modal.style.cssText = `position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;`;
+            document.body.appendChild(modal);
+        }
+        modal.innerHTML = `
+            <div style="background:white;border-radius:16px;padding:28px;max-width:480px;width:100%;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+                    <h2 style="margin:0;color:#008291;font-size:18px;">🛒 בחר הזמנות לרשימת קניות</h2>
+                    <button onclick="document.getElementById('shopping-modal').style.display='none'"
+                        style="border:none;background:none;font-size:22px;cursor:pointer;color:#aaa;line-height:1;">✕</button>
+                </div>
+                <p style="color:#888;font-size:13px;margin-bottom:16px;">סמן את ההזמנות שרוצה לכלול — החומרים יצטברו לרשימה אחת.</p>
+                <div id="shop-order-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;">
+                    ${orderOptions}
+                </div>
+                <button onclick="generateCombinedShopping()"
+                    style="width:100%;padding:14px;background:#008291;color:white;border:none;border-radius:50px;font-family:'Heebo';font-size:16px;font-weight:900;cursor:pointer;">
+                    📄 הפק רשימת קניות
+                </button>
+            </div>`;
+        modal.style.display = 'flex';
+    }
+
+    window.generateCombinedShopping = function() {
+        const checks = document.querySelectorAll('#shop-order-list input[type=checkbox]:checked');
+        if (checks.length === 0) { alert("לא נבחרה אף הזמנה."); return; }
+
+        const list = {}, tc_map = {};
+        let tc = 0;
+        const orderLabels = [];
+
+        checks.forEach(cb => {
+            let items;
+            let label;
+            if (cb.value === '__current__') {
+                items = orderItems;
+                label = 'הזמנה נוכחית';
+            } else {
+                const ord = state.savedOrders.find(o => o.id == cb.value);
+                if (!ord) return;
+                items = ord.items;
+                label = ord.custName || 'הזמנה';
+                if (ord.custDate) label += ` · ${ord.custDate}`;
+            }
+            orderLabels.push(label);
+            items.forEach(o => {
                 const mi = state.menu.flatMap(c => c.items).find(m => m.id === o.menuId);
+                if (!mi) return;
                 getOrderItemRecipes(mi, o).forEach(r => {
                     const bi = state.bank.flatMap(bc => bc.items).find(b => b.id === r.bankId);
                     if (bi) {
-                        const key = bi.id + (o.option ? '_' + o.option : '');
-                        if (!list[key]) list[key] = { n: bi.name + (o.option ? ` (${o.option})` : ''), q: 0, u: bi.unit || 'יח', c: 0 };
+                        const key = bi.id;
+                        if (!list[key]) list[key] = { n: bi.name, q: 0, u: bi.unit || 'יח', c: 0 };
                         list[key].q += r.qty * o.qty;
                         list[key].c += (bi.price * r.qty) * o.qty;
                         tc += (bi.price * r.qty) * o.qty;
                     }
                 });
             });
-            if (Object.keys(list).length === 0) { alert("אין מרכיבים במתכונים של ההזמנה הנוכחית."); return; }
-            const rows = Object.values(list).map((i, idx) => `
-                <tr>
-                    <td>${idx + 1}</td>
-                    <td>${i.n}</td>
-                    <td class="td-center">${fracDisplay(i.q)} ${i.u}</td>
-                    <td class="td-center">${i.c.toFixed(2)} ₪</td>
-                </tr>`).join('');
-            const today = new Date().toLocaleDateString('he-IL');
+        });
 
-            openPrintWindow(`<!DOCTYPE html>
+        if (Object.keys(list).length === 0) { alert("לא נמצאו מרכיבים בהזמנות הנבחרות."); return; }
+        document.getElementById('shopping-modal').style.display = 'none';
+
+        const today = new Date().toLocaleDateString('he-IL');
+        const logoUrl = window.location.origin + '/libis-logo.png';
+        const ordersLine = orderLabels.join(' · ');
+        const rows = Object.values(list).sort((a,b) => a.n.localeCompare(b.n, 'he')).map((i, idx) => `
+            <tr>
+                <td class="td-c">${idx + 1}</td>
+                <td>${i.n}</td>
+                <td class="td-c">${fracDisplay(i.q)} ${i.u}</td>
+                <td class="td-c">${i.c.toFixed(2)} ₪</td>
+                <td class="td-c" style="color:#ccc;">☐</td>
+            </tr>`).join('');
+
+        openPrintWindow(`<!DOCTYPE html>
 <html lang="he" dir="rtl">
-<head><meta charset="UTF-8"><style>${baseStyles}</style></head>
+<head><meta charset="UTF-8"><title>רשימת קניות – ליביס</title><style>${baseStyles}</style></head>
 <body>
 <div class="page">
-    <div class="header">
-        <div class="header-logo"><img src="${logoUrl}" alt="ליביס" onerror="this.style.display='none'"></div>
-        <div class="header-title">
-            <h1>רשימת קניות</h1>
-            <p>הכנה לאירוע</p>
-        </div>
-        <div class="doc-number"><div>תאריך: ${today}</div></div>
-    </div>
-
+  <div class="pdf-header">
+    <div class="pdf-header-logo"><img src="${logoUrl}" alt="ליביס" onerror="this.style.display='none'"></div>
+    <div class="pdf-header-center"><h1>רשימת קניות</h1><p>הכנה לאירוע</p></div>
+    <div class="pdf-header-meta"><div>${today}</div></div>
+  </div>
+  <div class="pdf-gold-bar"></div>
+  <div class="pdf-body">
+    ${orderLabels.length > 1 ? `<div style="background:#f5fafa;border:1px solid #c5e8ec;border-radius:8px;padding:10px 16px;margin-bottom:16px;font-size:12px;color:#005f6b;"><b>הזמנות שנכללו:</b> ${ordersLine}</div>` : ''}
     <table>
-        <thead>
-            <tr>
-                <th style="width:35px;">#</th>
-                <th>חומר גלם</th>
-                <th class="td-center" style="width:120px;">כמות נדרשת</th>
-                <th class="td-center" style="width:90px;">עלות</th>
-            </tr>
-        </thead>
-        <tbody>${rows}</tbody>
+      <thead><tr>
+        <th style="width:28px;">#</th><th>חומר גלם</th>
+        <th class="td-c" style="width:110px;">כמות נדרשת</th>
+        <th class="td-c" style="width:80px;">עלות</th>
+        <th class="td-c" style="width:40px;">✓</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
     </table>
-
-    <div class="total-box">
-        <span class="total-label">סה"כ עלות חומרים:</span>
-        <span class="total-amount">${tc.toFixed(2)} ₪</span>
+    <div class="summary-wrap">
+      <div class="total-row"><span class="total-label">סה״כ עלות חומרים</span><span class="total-amount">${tc.toFixed(2)} ₪</span></div>
     </div>
-
-    <div class="footer">
-        <span>ליביס – שירותי קייטרינג פרימיום</span>
-        <span>תאריך הפקה: ${today}</span>
-    </div>
+  </div>
+  <div class="pdf-footer">
+    <span>ליביס – שירותי קייטרינג פרימיום</span>
+    <span>תאריך הפקה: ${today}</span>
+  </div>
 </div>
 </body></html>`);
-        }
-    }
+    };
 
     window.onload = async () => {
         // טוען מפיירבייס — אם יש נתונים שם, הם מנצחים את ה-localStorage
