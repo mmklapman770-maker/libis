@@ -1479,6 +1479,28 @@
             const today  = new Date().toLocaleDateString('he-IL');
             const docNum = 'INV-' + Date.now().toString().slice(-6);
 
+            // שמירה אוטומטית לפני ייצוא PDF
+            if (!state.savedOrders) state.savedOrders = [];
+            const alreadySaved = state.savedOrders.some(o =>
+                o.custName === (custName || 'לקוח לא ידוע') &&
+                o.custDate === custDate &&
+                JSON.stringify(o.items) === JSON.stringify(orderItems)
+            );
+            if (!alreadySaved) {
+                const ts = Date.now();
+                state.savedOrders.unshift({
+                    id: ts, timestamp: ts,
+                    createdAt: today,
+                    custName: custName || 'לקוח לא ידוע',
+                    custDate, custLoc, custPhone, custNotes,
+                    extraLabel, extraAmount,
+                    status: 'future',
+                    total: grandTotal,
+                    items: JSON.parse(JSON.stringify(orderItems))
+                });
+                save();
+            }
+
             openPrintWindow(`<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head><meta charset="UTF-8"><title>הזמנת עבודה – ליביס</title><style>${baseStyles}</style></head>
