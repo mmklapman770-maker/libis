@@ -474,27 +474,7 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     let _fbSaving = false;
-    let _logoB64 = ''; // לוגו מוכן ל-PDF
-
-    // לוקח את התמונה שכבר טעונה בכותרת ומוציא ממנה base64
-    function captureLogo() {
-        const existingImg = document.querySelector('.header-logo');
-        if (!existingImg) return;
-        const tryCapture = () => {
-            try {
-                const c = document.createElement('canvas');
-                c.width  = existingImg.naturalWidth  || 200;
-                c.height = existingImg.naturalHeight || 80;
-                c.getContext('2d').drawImage(existingImg, 0, 0);
-                _logoB64 = c.toDataURL('image/png');
-            } catch(e) { _logoB64 = ''; }
-        };
-        if (existingImg.complete && existingImg.naturalWidth > 0) {
-            tryCapture();
-        } else {
-            existingImg.addEventListener('load', tryCapture);
-        }
-    }
+    const _logoUrl = window.location.origin + '/libis-logo.png';
 
     const initialMenu = [
         { cat: "פסטות ומוקרמים", items: [
@@ -1351,11 +1331,20 @@
         const win = window.open('', '_blank');
         win.document.write(html);
         win.document.close();
-        win.onload = () => { win.focus(); win.print(); };
+        win.onload = () => {
+            const imgs = win.document.images;
+            if (imgs.length === 0) { win.focus(); win.print(); return; }
+            let done = 0;
+            const check = () => { if (++done >= imgs.length) { win.focus(); win.print(); } };
+            for (let i = 0; i < imgs.length; i++) {
+                if (imgs[i].complete) { check(); }
+                else { imgs[i].onload = imgs[i].onerror = check; }
+            }
+        };
     }
 
     function generatePDF(type) {
-        const logoUrl = _logoB64;
+        const logoUrl = _logoUrl;
         const baseStyles = `
             @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap');
             * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -1633,7 +1622,7 @@
         document.getElementById('shopping-modal').style.display = 'none';
 
         const today = new Date().toLocaleDateString('he-IL');
-        const logoUrl = _logoB64;
+        const logoUrl = _logoUrl;
         const ordersLine = orderLabels.join(' · ');
         const rows = Object.values(list).sort((a,b) => a.n.localeCompare(b.n, 'he')).map((i, idx) => `
             <tr>
@@ -1680,7 +1669,6 @@
     };
 
     window.onload = async () => {
-        captureLogo(); // לוכד לוגו מהכותרת לשימוש ב-PDF
         // טוען מפיירבייס — אם יש נתונים שם, הם מנצחים את ה-localStorage
         try {
             const snap = await db.ref('libis/state').once('value');
