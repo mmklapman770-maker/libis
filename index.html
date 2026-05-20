@@ -476,21 +476,25 @@
     let _fbSaving = false;
     let _logoB64 = ''; // לוגו מוכן ל-PDF
 
-    // טוען לוגו דרך canvas פעם אחת בטעינת הדף
-    function preloadLogo() {
-        const img = new Image();
-        img.onload = () => {
+    // לוקח את התמונה שכבר טעונה בכותרת ומוציא ממנה base64
+    function captureLogo() {
+        const existingImg = document.querySelector('.header-logo');
+        if (!existingImg) return;
+        const tryCapture = () => {
             try {
                 const c = document.createElement('canvas');
-                c.width = img.naturalWidth; c.height = img.naturalHeight;
-                c.getContext('2d').drawImage(img, 0, 0);
+                c.width  = existingImg.naturalWidth  || 200;
+                c.height = existingImg.naturalHeight || 80;
+                c.getContext('2d').drawImage(existingImg, 0, 0);
                 _logoB64 = c.toDataURL('image/png');
             } catch(e) { _logoB64 = ''; }
         };
-        img.onerror = () => { _logoB64 = ''; };
-        img.src = '/libis-logo.png?' + Date.now();
+        if (existingImg.complete && existingImg.naturalWidth > 0) {
+            tryCapture();
+        } else {
+            existingImg.addEventListener('load', tryCapture);
+        }
     }
-    preloadLogo();
 
     const initialMenu = [
         { cat: "פסטות ומוקרמים", items: [
@@ -1676,6 +1680,7 @@
     };
 
     window.onload = async () => {
+        captureLogo(); // לוכד לוגו מהכותרת לשימוש ב-PDF
         // טוען מפיירבייס — אם יש נתונים שם, הם מנצחים את ה-localStorage
         try {
             const snap = await db.ref('libis/state').once('value');
