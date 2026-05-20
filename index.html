@@ -1334,13 +1334,35 @@
         win.onload = () => { win.focus(); win.print(); };
     }
 
-    function generatePDF(type) {
-        const logoUrl = window.location.origin + '/libis-logo.png';
+    // ממיר תמונה ל-base64 כדי שתופיע בהדפסה
+    async function getLogoBase64() {
+        try {
+            const res = await fetch('/libis-logo.png');
+            const blob = await res.blob();
+            return new Promise(resolve => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = () => resolve('');
+                reader.readAsDataURL(blob);
+            });
+        } catch { return ''; }
+    }
+
+    async function generatePDF(type) {
+        const logoB64 = await getLogoBase64();
+        const logoUrl = logoB64 || '';
         const baseStyles = `
             @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap');
             * { box-sizing: border-box; margin: 0; padding: 0; }
             body { font-family: 'Heebo', Arial, sans-serif; direction: rtl; color: #222; background: white; }
             .page { width: 210mm; min-height: 297mm; padding: 0; margin: 0 auto; position: relative; }
+
+            /* ב"ה */
+            .bh-mark {
+                position: absolute; top: 6px; right: 10px;
+                font-size: 9px; color: #bbb; font-family: 'Heebo', Arial, sans-serif;
+                letter-spacing: 1px;
+            }
 
             /* כותרת ירוקה עם לוגו */
             .pdf-header {
@@ -1468,8 +1490,9 @@
 <head><meta charset="UTF-8"><title>הזמנת עבודה – ליביס</title><style>${baseStyles}</style></head>
 <body>
 <div class="page">
+  <div class="bh-mark">בס״ד</div>
   <div class="pdf-header">
-    <div class="pdf-header-logo"><img src="${logoUrl}" alt="ליביס" onerror="this.style.display='none'"></div>
+    <div class="pdf-header-logo">${logoUrl ? `<img src="${logoUrl}" alt="ליביס" style="height:52px;filter:brightness(0) invert(1);">` : '<span style="font-size:22px;font-weight:900;letter-spacing:1px;">ליביס</span>'}</div>
     <div class="pdf-header-center"><h1>הזמנת עבודה</h1><p>שירותי קייטרינג פרימיום · כשר</p></div>
     <div class="pdf-header-meta"><div>מס׳ ${docNum}</div><div>${today}</div></div>
   </div>
@@ -1563,7 +1586,7 @@
         modal.style.display = 'flex';
     }
 
-    window.generateCombinedShopping = function() {
+    window.generateCombinedShopping = async function() {
         const checks = document.querySelectorAll('#shop-order-list input[type=checkbox]:checked');
         if (checks.length === 0) { alert("לא נבחרה אף הזמנה."); return; }
 
@@ -1605,7 +1628,7 @@
         document.getElementById('shopping-modal').style.display = 'none';
 
         const today = new Date().toLocaleDateString('he-IL');
-        const logoUrl = window.location.origin + '/libis-logo.png';
+        const logoUrl = await getLogoBase64();
         const ordersLine = orderLabels.join(' · ');
         const rows = Object.values(list).sort((a,b) => a.n.localeCompare(b.n, 'he')).map((i, idx) => `
             <tr>
@@ -1621,8 +1644,9 @@
 <head><meta charset="UTF-8"><title>רשימת קניות – ליביס</title><style>${baseStyles}</style></head>
 <body>
 <div class="page">
+  <div class="bh-mark">בס״ד</div>
   <div class="pdf-header">
-    <div class="pdf-header-logo"><img src="${logoUrl}" alt="ליביס" onerror="this.style.display='none'"></div>
+    <div class="pdf-header-logo">${logoUrl ? `<img src="${logoUrl}" alt="ליביס" style="height:52px;filter:brightness(0) invert(1);">` : '<span style="font-size:22px;font-weight:900;letter-spacing:1px;">ליביס</span>'}</div>
     <div class="pdf-header-center"><h1>רשימת קניות</h1><p>הכנה לאירוע</p></div>
     <div class="pdf-header-meta"><div>${today}</div></div>
   </div>
