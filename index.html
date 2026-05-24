@@ -386,7 +386,10 @@
             <div id="receipt-results" style="display:none;">
                 <h4 style="margin:0 0 12px;color:#333;">✅ פריטים שזוהו — ערוך ואשר:</h4>
                 <div id="receipt-items-list"></div>
-                <button onclick="addReceiptItemsToBank()" style="width:100%;background:var(--gold);color:white;border:none;padding:13px;border-radius:50px;font-family:'Heebo';font-size:15px;font-weight:900;cursor:pointer;margin-top:12px;">
+                <button onclick="addReceiptRow()" style="width:100%;background:#f0f0f0;color:#555;border:none;padding:10px;border-radius:50px;font-family:'Heebo';font-size:13px;font-weight:700;cursor:pointer;margin-top:8px;">
+                    + הוסף שורה
+                </button>
+                <button onclick="addReceiptItemsToBank()" style="width:100%;background:var(--gold);color:white;border:none;padding:13px;border-radius:50px;font-family:'Heebo';font-size:15px;font-weight:900;cursor:pointer;margin-top:8px;">
                     ✅ הוסף מסומנים לבנק
                 </button>
             </div>
@@ -1127,52 +1130,56 @@
         document.getElementById('receipt-loading').style.display = 'block';
         document.getElementById('receipt-analyze-btn').style.display = 'none';
         document.getElementById('receipt-results').style.display = 'none';
-        try {
-            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{
-                        parts: [
+
+        const models = ['gemini-1.5-flash-latest', 'gemini-1.5-flash', 'gemini-2.0-flash'];
+        let lastError = '';
+
+        for (const model of models) {
+            try {
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_KEY}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [
                             { inline_data: { mime_type: _receiptMime, data: _receiptBase64 } },
-                            { text: `This is an Israeli supermarket receipt in Hebrew. Extract all purchased food/ingredient items with their unit price.
-Return ONLY valid JSON, no explanation, no markdown, exactly this format:
-{"items":[{"name":"product name in Hebrew","unit":"יחידה or קילו or ליטר or חבילה","price":9.30}]}
-Rules: skip bags/fees/taxes. Short Hebrew names. Price per single unit as shown on receipt.` }
-                        ]
-                    }],
-                    generationConfig: { temperature: 0.1 }
-                })
-            });
-            const data = await res.json();
-            if (data.error) throw new Error('שגיאת API: ' + data.error.message);
-            const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-            if (!text) throw new Error('תגובה ריקה מ-AI. פרטים: ' + JSON.stringify(data).substring(0,200));
-            // נסה לחלץ JSON בכמה דרכים
-            let parsed = null;
-            const patterns = [
-                /```json\s*([\s\S]*?)```/,
-                /```\s*([\s\S]*?)```/,
-                /(\{[\s\S]*\})/
-            ];
-            for (const p of patterns) {
-                const m = text.match(p);
-                if (m) { try { parsed = JSON.parse(m[1]); break; } catch(e) {} }
-            }
-            if (!parsed) {
-                // נסה לפרסר ישירות
-                try { parsed = JSON.parse(text); } catch(e) {}
-            }
-            if (!parsed || !parsed.items) throw new Error('תגובת AI: ' + text.substring(0, 200));
-            renderReceiptItems(parsed.items || []);
-        } catch(e) {
-            alert('שגיאה בניתוח הקבלה: ' + e.message);
-            document.getElementById('receipt-analyze-btn').style.display = 'block';
+                            { text: `Israeli supermarket receipt in Hebrew. List all food items with price per unit.
+JSON only, no markdown: {"items":[{"name":"Hebrew name","unit":"יחידה/קילו/ליטר/חבילה","price":9.30}]}
+Skip: bags, taxes, fees, totals. Keep names short in Hebrew.` }
+                        ]}],
+                        generationConfig: { temperature: 0.1 }
+                    })
+                });
+                const data = await res.json();
+                if (data.error) { lastError = data.error.message; continue; }
+                const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+                if (!text) { lastError = 'תגובה ריקה'; continue; }
+                let parsed = null;
+                for (const p of [/```json\s*([\s\S]*?)```/, /```\s*([\s\S]*?)```/, /(\{[\s\S]*\})/]) {
+                    const m = text.match(p);
+                    if (m) { try { parsed = JSON.parse(m[1]); break; } catch(e) {} }
+                }
+                if (!parsed) try { parsed = JSON.parse(text); } catch(e) {}
+                if (parsed?.items?.length) {
+                    renderReceiptItems(parsed.items);
+                    document.getElementById('receipt-loading').style.display = 'none';
+                    return;
+                }
+                lastError = 'לא זוהו פריטים';
+            } catch(e) { lastError = e.message; }
         }
+
+        // כל המודלים נכשלו — פתח טופס ידני
         document.getElementById('receipt-loading').style.display = 'none';
+        document.getElementById('receipt-analyze-btn').style.display = 'block';
+        renderReceiptItems([
+            {name:'', unit:'יחידה', price:0},
+            {name:'', unit:'יחידה', price:0},
+            {name:'', unit:'יחידה', price:0}
+        ], true);
+        document.getElementById('receipt-results-title').textContent = '✏️ הכנס פריטים ידנית:';
     }
 
-    function renderReceiptItems(items) {
+    function renderReceiptItems(items, manual=false) {
         const catOptions = BANK_CATS.map(c => `<option>${c}</option>`).join('');
         const html = items.map((item, i) => `
             <div style="display:grid;grid-template-columns:32px 1fr 80px 70px 1fr;gap:6px;align-items:center;padding:8px;background:${i%2?'#f9f9f9':'white'};border-radius:8px;margin-bottom:4px;">
@@ -1193,6 +1200,24 @@ Rules: skip bags/fees/taxes. Short Hebrew names. Price per single unit as shown 
         document.getElementById('receipt-items-list').innerHTML = header + html;
         document.getElementById('receipt-results').style.display = 'block';
         window._receiptCount = items.length;
+        if (!document.getElementById('receipt-results-title')) {
+            document.querySelector('#receipt-results h4').id = 'receipt-results-title';
+        }
+        document.getElementById('receipt-results-title').textContent = manual ? '✏️ הכנס פריטים ידנית:' : '✅ פריטים שזוהו — ערוך ואשר:';
+    }
+
+    function addReceiptRow() {
+        const catOptions = BANK_CATS.map(c => `<option>${c}</option>`).join('');
+        const i = window._receiptCount++;
+        const row = document.createElement('div');
+        row.style.cssText = 'display:grid;grid-template-columns:32px 1fr 80px 70px 1fr;gap:6px;align-items:center;padding:8px;border-radius:8px;margin-bottom:4px;';
+        row.innerHTML = `
+            <input type="checkbox" id="ri-${i}" checked style="width:18px;height:18px;cursor:pointer;">
+            <input value="" id="ri-name-${i}" placeholder="שם מוצר" style="border:1px solid #ddd;border-radius:6px;padding:5px 8px;font-family:'Heebo';font-size:13px;width:100%;box-sizing:border-box;">
+            <input value="יחידה" id="ri-unit-${i}" style="border:1px solid #ddd;border-radius:6px;padding:5px 6px;font-family:'Heebo';font-size:13px;text-align:center;width:100%;box-sizing:border-box;">
+            <input type="number" value="0" id="ri-price-${i}" style="border:1px solid #ddd;border-radius:6px;padding:5px 6px;font-family:'Heebo';font-size:13px;text-align:center;width:100%;box-sizing:border-box;">
+            <select id="ri-cat-${i}" style="border:1px solid #ddd;border-radius:6px;padding:5px 6px;font-family:'Heebo';font-size:12px;width:100%;box-sizing:border-box;">${catOptions}</select>`;
+        document.getElementById('receipt-items-list').appendChild(row);
     }
 
     function addReceiptItemsToBank() {
