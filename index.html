@@ -1105,9 +1105,11 @@
     function closeReceiptScanner() {
         document.getElementById('receipt-modal').style.display = 'none';
     }
+    let _receiptMime = 'image/jpeg';
     function previewReceipt(input) {
         const file = input.files[0];
         if (!file) return;
+        _receiptMime = file.type || 'image/jpeg';
         const reader = new FileReader();
         reader.onload = e => {
             const dataUrl = e.target.result;
@@ -1132,7 +1134,7 @@
                 body: JSON.stringify({
                     contents: [{
                         parts: [
-                            { inline_data: { mime_type: 'image/jpeg', data: _receiptBase64 } },
+                            { inline_data: { mime_type: _receiptMime, data: _receiptBase64 } },
                             { text: `זוהי קבלה מסופרמרקט או ספק מזון. חלץ את כל הפריטים עם המחיר ליחידה/ק"ג/ליטר.
 החזר JSON בלבד, ללא הסבר, בפורמט הזה:
 {"items":[{"name":"שם המוצר","unit":"קילו/ליטר/יחידה/חבילה","price":12.5}]}
@@ -1144,9 +1146,23 @@
             });
             const data = await res.json();
             const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-            const jsonMatch = text.match(/\{[\s\S]*\}/);
-            if (!jsonMatch) throw new Error('לא זוהו פריטים');
-            const parsed = JSON.parse(jsonMatch[0]);
+            console.log('Gemini response:', text);
+            // נסה לחלץ JSON בכמה דרכים
+            let parsed = null;
+            const patterns = [
+                /```json\s*([\s\S]*?)```/,
+                /```\s*([\s\S]*?)```/,
+                /(\{[\s\S]*\})/
+            ];
+            for (const p of patterns) {
+                const m = text.match(p);
+                if (m) { try { parsed = JSON.parse(m[1]); break; } catch(e) {} }
+            }
+            if (!parsed) {
+                // נסה לפרסר ישירות
+                try { parsed = JSON.parse(text); } catch(e) {}
+            }
+            if (!parsed || !parsed.items) throw new Error('לא זוהו פריטים — נסה תמונה ברורה יותר');
             renderReceiptItems(parsed.items || []);
         } catch(e) {
             alert('שגיאה בניתוח הקבלה: ' + e.message);
