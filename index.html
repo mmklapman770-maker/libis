@@ -1692,34 +1692,46 @@
 </body></html>`);
     };
 
+    // חישוב "ציון" לנתונים — כמה נתונים אמיתיים יש
+    function dataScore(s) {
+        if (!s || !s.menu) return 0;
+        const bankItems  = (s.bank  || []).reduce((n, c) => n + (c.items||[]).length, 0);
+        const recipes    = (s.menu  || []).reduce((n, c) => n + c.items.reduce((m, i) => m + (i.recipe||[]).length, 0), 0);
+        const orders     = (s.savedOrders || []).length;
+        return bankItems * 10 + recipes * 5 + orders * 3;
+    }
+
     window.onload = async () => {
-        // ===== מצב שחזור — קורא רק מ-localStorage, לא כותב לפיירבייס =====
-        const localRaw = localStorage.getItem('libis_final');
-        if (localRaw) {
-            try {
-                const localState = sanitizeState(JSON.parse(localRaw));
-                if (localState && localState.menu) {
-                    state = localState;
-                    // מציג כפתור שחזור אם יש נתונים
-                    const hasRealData = localState.bank && localState.bank.some(c => c.items && c.items.length > 2);
-                    if (hasRealData) {
-                        const btn = document.createElement('button');
-                        btn.textContent = '🔄 שחזר ושמור לענן';
-                        btn.style.cssText = 'position:fixed;top:80px;left:50%;transform:translateX(-50%);z-index:9999;background:#e53935;color:white;border:none;padding:14px 28px;border-radius:50px;font-family:Heebo;font-size:16px;font-weight:900;cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,0.3);';
-                        btn.onclick = () => { save(); btn.textContent = '✅ נשמר!'; setTimeout(() => btn.remove(), 2000); };
-                        document.body.appendChild(btn);
-                    }
-                }
-            } catch(e) {}
+        // טוען מ-Firebase ומשווה ל-localStorage — מנצח מי שיש לו יותר נתונים אמיתיים
+        try {
+            const snap = await db.ref('libis/state').once('value');
+            const fbState = sanitizeState(snap.val());
+            const localRaw = localStorage.getItem('libis_final');
+            const localState = localRaw ? sanitizeState(JSON.parse(localRaw)) : null;
+
+            const fbScore    = dataScore(fbState);
+            const localScore = dataScore(localState);
+
+            if (fbScore >= localScore && fbState && fbState.menu) {
+                // Firebase יש יותר נתונים — השתמש בו
+                state = fbState;
+                localStorage.setItem('libis_final', JSON.stringify(state));
+            } else if (localState && localScore > fbScore) {
+                // localStorage יש יותר נתונים — סנכרן אותו לענן
+                state = localState;
+                save();
+            }
+        } catch(e) {
+            console.warn('שגיאת Firebase, עובד עם נתונים מקומיים');
         }
         runMigration();
         render();
 
-        // מאזין לשינויים ממכשירים אחרים בזמן אמת — מושבת זמנית בשחזור
+        // מאזין לשינויים ממכשירים אחרים בזמן אמת
         db.ref('libis/state').on('value', snap => {
             if (_fbSaving) return;
             const s = sanitizeState(snap.val());
-            if (s && s.menu) {
+            if (s && s.menu && dataScore(s) >= dataScore(state)) {
                 state = s;
                 localStorage.setItem('libis_final', JSON.stringify(state));
                 render();
