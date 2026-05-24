@@ -1128,17 +1128,17 @@
         document.getElementById('receipt-analyze-btn').style.display = 'none';
         document.getElementById('receipt-results').style.display = 'none';
         try {
-            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`, {
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     contents: [{
                         parts: [
                             { inline_data: { mime_type: _receiptMime, data: _receiptBase64 } },
-                            { text: `זוהי קבלה מסופרמרקט או ספק מזון. חלץ את כל הפריטים עם המחיר ליחידה/ק"ג/ליטר.
-החזר JSON בלבד, ללא הסבר, בפורמט הזה:
-{"items":[{"name":"שם המוצר","unit":"קילו/ליטר/יחידה/חבילה","price":12.5}]}
-אם המחיר הוא לאריזה — חשב מחיר ליחידת מידה. תן שמות קצרים וברורים בעברית.` }
+                            { text: `This is an Israeli supermarket receipt in Hebrew. Extract all purchased food/ingredient items with their unit price.
+Return ONLY valid JSON, no explanation, no markdown, exactly this format:
+{"items":[{"name":"product name in Hebrew","unit":"יחידה or קילו or ליטר or חבילה","price":9.30}]}
+Rules: skip bags/fees/taxes. Short Hebrew names. Price per single unit as shown on receipt.` }
                         ]
                     }],
                     generationConfig: { temperature: 0.1 }
