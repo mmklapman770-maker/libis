@@ -533,20 +533,22 @@
     let state = JSON.parse(localStorage.getItem('libis_final')) || { menu: initialMenu, bank: initialBank, savedOrders: [] };
     let orderItems = [];
 
-    // מיגרציה: מוסיף optionRecipes לפריטים עם options שעוד אין להם
-    (function migrate() {
+    // מיגרציה: מוסיפה optionRecipes — רצה רק לאחר טעינת הנתונים מפיירבייס
+    function runMigration() {
         const ITEMS_WITH_OPTIONS = {17:["טונה","ביצה קשה","גבינה מלוח וירקות קלויים"], 19:["פסטו גבינות","סביח","טונה","סלומון מעושן","סלט ביצים"], 21:["עשבי תיבול","אנטיפסטי","בלקני"], 22:["סביח","גבינת שמנת ואנטיפסטי","טונה ירקות"], 23:["טריאקי","עשבי תיבול","דבש וחרדל"]};
+        let changed = false;
         state.menu.forEach(cat => cat.items.forEach(item => {
             if (ITEMS_WITH_OPTIONS[item.id]) {
-                if (!item.options) item.options = ITEMS_WITH_OPTIONS[item.id];
+                if (!item.options) { item.options = ITEMS_WITH_OPTIONS[item.id]; changed = true; }
                 if (!item.optionRecipes) {
                     item.optionRecipes = {};
-                    item.options.forEach(opt => { if (!item.optionRecipes[opt]) item.optionRecipes[opt] = []; });
+                    item.options.forEach(opt => { item.optionRecipes[opt] = []; });
+                    changed = true;
                 }
             }
         }));
-        save();
-    })();
+        if (changed) save(); // שומר רק אם היה שינוי אמיתי
+    }
 
     let _editorTab = 'base';
 
@@ -1691,17 +1693,18 @@
     };
 
     window.onload = async () => {
-        // טוען מפיירבייס — אם יש נתונים שם, הם מנצחים את ה-localStorage
+        // טוען מפיירבייס — הנתונים האמיתיים תמיד מנצחים את localStorage
         try {
             const snap = await db.ref('libis/state').once('value');
             const fbState = sanitizeState(snap.val());
-            if (fbState && fbState.menu) {
+            if (fbState && fbState.menu && fbState.menu.length > 0) {
                 state = fbState;
                 localStorage.setItem('libis_final', JSON.stringify(state));
             }
         } catch(e) {
             console.warn('לא הצלחתי לטעון מפיירבייס, עובד עם נתונים מקומיים');
         }
+        runMigration(); // רק אחרי שהנתונים האמיתיים נטענו
         render();
 
         // מאזין לשינויים ממכשירים אחרים בזמן אמת
