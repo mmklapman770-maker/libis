@@ -348,10 +348,50 @@
 </div>
 
 <div id="bank-tab" class="container">
-    <div style="display:flex; gap:10px; margin-bottom:16px; align-items:center;">
-        <button class="add-btn-small" style="margin:0;" onclick="addBankCategory()">+ קטגוריה חדשה בבנק</button>
+    <div style="display:flex; gap:10px; margin-bottom:16px; align-items:center; flex-wrap:wrap;">
+        <button class="add-btn-small" style="margin:0;" onclick="addBankCategory()">+ קטגוריה חדשה</button>
+        <button onclick="openReceiptScanner()" style="display:flex;align-items:center;gap:8px;background:var(--teal);color:white;border:none;padding:10px 20px;border-radius:50px;font-family:'Heebo';font-size:14px;font-weight:700;cursor:pointer;">
+            📸 סרוק קבלה
+        </button>
     </div>
     <div id="bank-list-container"></div>
+</div>
+
+<!-- מודל סריקת קבלה -->
+<div id="receipt-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:5000;overflow-y:auto;padding:20px;">
+    <div style="background:white;border-radius:16px;max-width:600px;margin:0 auto;overflow:hidden;">
+        <div style="background:var(--teal);padding:18px 22px;display:flex;justify-content:space-between;align-items:center;">
+            <h3 style="margin:0;color:white;font-size:18px;">📸 סריקת קבלה</h3>
+            <button onclick="closeReceiptScanner()" style="background:none;border:none;color:white;font-size:22px;cursor:pointer;">✕</button>
+        </div>
+        <div style="padding:22px;">
+            <!-- העלאת תמונה -->
+            <div id="receipt-upload-area" style="border:2px dashed #ccc;border-radius:12px;padding:30px;text-align:center;cursor:pointer;margin-bottom:16px;" onclick="document.getElementById('receipt-file').click()">
+                <div style="font-size:40px;margin-bottom:8px;">📷</div>
+                <div style="font-weight:700;color:var(--teal);">לחץ לצילום או העלאת קבלה</div>
+                <div style="font-size:12px;color:#aaa;margin-top:4px;">מצלמה / גלריה / קובץ</div>
+            </div>
+            <input type="file" id="receipt-file" accept="image/*" capture="environment" style="display:none;" onchange="previewReceipt(this)">
+            <img id="receipt-preview" style="display:none;width:100%;border-radius:10px;margin-bottom:16px;max-height:300px;object-fit:contain;">
+
+            <button id="receipt-analyze-btn" onclick="analyzeReceipt()" style="display:none;width:100%;background:var(--teal);color:white;border:none;padding:13px;border-radius:50px;font-family:'Heebo';font-size:16px;font-weight:900;cursor:pointer;margin-bottom:16px;">
+                🔍 נתח קבלה עם AI
+            </button>
+
+            <div id="receipt-loading" style="display:none;text-align:center;padding:20px;color:var(--teal);font-weight:700;">
+                ⏳ מנתח קבלה...
+            </div>
+
+            <!-- תוצאות -->
+            <div id="receipt-results" style="display:none;">
+                <h4 style="margin:0 0 12px;color:#333;">✅ פריטים שזוהו — ערוך ואשר:</h4>
+                <div id="receipt-items-list"></div>
+                <button onclick="addReceiptItemsToBank()" style="width:100%;background:var(--gold);color:white;border:none;padding:13px;border-radius:50px;font-family:'Heebo';font-size:15px;font-weight:900;cursor:pointer;margin-top:12px;">
+                    ✅ הוסף מסומנים לבנק
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <div id="recipes-tab" class="container">
@@ -520,14 +560,18 @@
         ]}
     ];
 
+    const GEMINI_KEY = 'AIzaSyD28Dx7cSXBbkP2jkbxaXfkKnSm6svXNzM';
+    const BANK_CATS  = ['קמח ובצקים','פיצוחים ותבלינים','מוצרי חלב','דגים וקפואים','מארזים','מאפים ולחמים','ירקות ופירות','שונות'];
+
     const initialBank = [
-        { cat: "מוצרי חלב", items: [
-            {id: 501, name: "שמנת 15%", unit: "ליטר", price: 21},
-            {id: 502, name: "גבינה צהובה מגורדת", unit: "קילו", price: 42}
-        ]},
-        { cat: "ירקות", items: [
-            {id: 601, name: "עגבניות שרי", unit: "קילו", price: 15}
-        ]}
+        { cat: "קמח ובצקים",        items: [] },
+        { cat: "פיצוחים ותבלינים",  items: [] },
+        { cat: "מוצרי חלב",         items: [{id:501,name:"שמנת 15%",unit:"ליטר",price:21},{id:502,name:"גבינה צהובה מגורדת",unit:"קילו",price:42}] },
+        { cat: "דגים וקפואים",      items: [] },
+        { cat: "מארזים",            items: [] },
+        { cat: "מאפים ולחמים",      items: [] },
+        { cat: "ירקות ופירות",      items: [{id:601,name:"עגבניות שרי",unit:"קילו",price:15}] },
+        { cat: "שונות",             items: [] }
     ];
 
     let state = JSON.parse(localStorage.getItem('libis_final')) || { menu: initialMenu, bank: initialBank, savedOrders: [] };
@@ -1045,6 +1089,121 @@
         updateStats();
         renderSavedOrders();
     }
+
+    // ===== סריקת קבלה =====
+    let _receiptBase64 = '';
+
+    function openReceiptScanner() {
+        document.getElementById('receipt-modal').style.display = 'block';
+        document.getElementById('receipt-preview').style.display = 'none';
+        document.getElementById('receipt-analyze-btn').style.display = 'none';
+        document.getElementById('receipt-results').style.display = 'none';
+        document.getElementById('receipt-loading').style.display = 'none';
+        document.getElementById('receipt-file').value = '';
+        _receiptBase64 = '';
+    }
+    function closeReceiptScanner() {
+        document.getElementById('receipt-modal').style.display = 'none';
+    }
+    function previewReceipt(input) {
+        const file = input.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = e => {
+            const dataUrl = e.target.result;
+            _receiptBase64 = dataUrl.split(',')[1];
+            const img = document.getElementById('receipt-preview');
+            img.src = dataUrl;
+            img.style.display = 'block';
+            document.getElementById('receipt-analyze-btn').style.display = 'block';
+            document.getElementById('receipt-results').style.display = 'none';
+        };
+        reader.readAsDataURL(file);
+    }
+    async function analyzeReceipt() {
+        if (!_receiptBase64) return;
+        document.getElementById('receipt-loading').style.display = 'block';
+        document.getElementById('receipt-analyze-btn').style.display = 'none';
+        document.getElementById('receipt-results').style.display = 'none';
+        try {
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [
+                            { inline_data: { mime_type: 'image/jpeg', data: _receiptBase64 } },
+                            { text: `זוהי קבלה מסופרמרקט או ספק מזון. חלץ את כל הפריטים עם המחיר ליחידה/ק"ג/ליטר.
+החזר JSON בלבד, ללא הסבר, בפורמט הזה:
+{"items":[{"name":"שם המוצר","unit":"קילו/ליטר/יחידה/חבילה","price":12.5}]}
+אם המחיר הוא לאריזה — חשב מחיר ליחידת מידה. תן שמות קצרים וברורים בעברית.` }
+                        ]
+                    }],
+                    generationConfig: { temperature: 0.1 }
+                })
+            });
+            const data = await res.json();
+            const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+            const jsonMatch = text.match(/\{[\s\S]*\}/);
+            if (!jsonMatch) throw new Error('לא זוהו פריטים');
+            const parsed = JSON.parse(jsonMatch[0]);
+            renderReceiptItems(parsed.items || []);
+        } catch(e) {
+            alert('שגיאה בניתוח הקבלה: ' + e.message);
+            document.getElementById('receipt-analyze-btn').style.display = 'block';
+        }
+        document.getElementById('receipt-loading').style.display = 'none';
+    }
+
+    function renderReceiptItems(items) {
+        const catOptions = BANK_CATS.map(c => `<option>${c}</option>`).join('');
+        const html = items.map((item, i) => `
+            <div style="display:grid;grid-template-columns:32px 1fr 80px 70px 1fr;gap:6px;align-items:center;padding:8px;background:${i%2?'#f9f9f9':'white'};border-radius:8px;margin-bottom:4px;">
+                <input type="checkbox" id="ri-${i}" checked style="width:18px;height:18px;cursor:pointer;">
+                <input value="${item.name}" id="ri-name-${i}" style="border:1px solid #ddd;border-radius:6px;padding:5px 8px;font-family:'Heebo';font-size:13px;width:100%;box-sizing:border-box;">
+                <input value="${item.unit}" id="ri-unit-${i}" style="border:1px solid #ddd;border-radius:6px;padding:5px 6px;font-family:'Heebo';font-size:13px;text-align:center;width:100%;box-sizing:border-box;">
+                <input type="number" value="${item.price}" id="ri-price-${i}" style="border:1px solid #ddd;border-radius:6px;padding:5px 6px;font-family:'Heebo';font-size:13px;text-align:center;width:100%;box-sizing:border-box;">
+                <select id="ri-cat-${i}" style="border:1px solid #ddd;border-radius:6px;padding:5px 6px;font-family:'Heebo';font-size:12px;width:100%;box-sizing:border-box;">${catOptions}</select>
+            </div>
+        `).join('');
+        const header = `<div style="display:grid;grid-template-columns:32px 1fr 80px 70px 1fr;gap:6px;padding:4px 8px;margin-bottom:4px;">
+            <span></span>
+            <span style="font-size:11px;color:#aaa;font-weight:700;">מוצר</span>
+            <span style="font-size:11px;color:#aaa;font-weight:700;text-align:center;">יחידה</span>
+            <span style="font-size:11px;color:#aaa;font-weight:700;text-align:center;">מחיר ₪</span>
+            <span style="font-size:11px;color:#aaa;font-weight:700;">קטגוריה</span>
+        </div>`;
+        document.getElementById('receipt-items-list').innerHTML = header + html;
+        document.getElementById('receipt-results').style.display = 'block';
+        window._receiptCount = items.length;
+    }
+
+    function addReceiptItemsToBank() {
+        let added = 0;
+        for (let i = 0; i < window._receiptCount; i++) {
+            if (!document.getElementById(`ri-${i}`).checked) continue;
+            const name  = document.getElementById(`ri-name-${i}`).value.trim();
+            const unit  = document.getElementById(`ri-unit-${i}`).value.trim();
+            const price = parseFloat(document.getElementById(`ri-price-${i}`).value) || 0;
+            const cat   = document.getElementById(`ri-cat-${i}`).value;
+            if (!name) continue;
+            let catObj = state.bank.find(c => c.cat === cat);
+            if (!catObj) { catObj = {cat, items:[]}; state.bank.push(catObj); }
+            // עדכן אם כבר קיים, אחרת הוסף
+            const existing = catObj.items.find(b => b.name === name);
+            if (existing) { existing.price = price; existing.unit = unit; }
+            else catObj.items.push({id: Date.now() + i, name, unit, price});
+            added++;
+        }
+        if (added > 0) {
+            save(); render();
+            alert(`✅ נוספו/עודכנו ${added} פריטים בבנק!`);
+            closeReceiptScanner();
+        } else {
+            alert('לא נבחרו פריטים.');
+        }
+    }
+    // ===== סוף סריקת קבלה =====
 
     function updateBank(cIdx, mIdx, f, v) { state.bank[cIdx].items[mIdx][f] = f==='price'?parseFloat(v):v; save(); updateStats(); }
     function deleteBank(cIdx, mIdx) { state.bank[cIdx].items.splice(mIdx, 1); render(); save(); }
