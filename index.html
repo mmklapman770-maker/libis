@@ -375,6 +375,18 @@
             <input type="file" id="receipt-file" accept="image/*" capture="environment" style="display:none;" onchange="previewReceipt(this)">
             <img id="receipt-preview" style="display:none;width:100%;border-radius:10px;margin-bottom:16px;max-height:300px;object-fit:contain;">
 
+            <!-- מפתח API -->
+            <div id="gemini-key-section" style="margin-bottom:14px;">
+                <div style="display:flex;gap:8px;align-items:center;">
+                    <input id="gemini-key-input" type="password" placeholder="🔑 הכנס Gemini API Key (aistudio.google.com)"
+                        style="flex:1;padding:10px 14px;border:1.5px solid #ddd;border-radius:50px;font-family:'Heebo';font-size:13px;direction:ltr;"
+                        oninput="saveGeminiKey(this.value)">
+                    <a href="https://aistudio.google.com/apikey" target="_blank"
+                        style="font-size:11px;color:var(--teal);white-space:nowrap;text-decoration:none;">קבל מפתח חינם ↗</a>
+                </div>
+                <div id="gemini-key-status" style="font-size:11px;color:#aaa;margin-top:4px;padding-right:14px;"></div>
+            </div>
+
             <button id="receipt-analyze-btn" onclick="analyzeReceipt()" style="display:none;width:100%;background:var(--teal);color:white;border:none;padding:13px;border-radius:50px;font-family:'Heebo';font-size:16px;font-weight:900;cursor:pointer;margin-bottom:16px;">
                 🔍 נתח קבלה עם AI
             </button>
@@ -1097,6 +1109,20 @@
     // ===== סריקת קבלה =====
     let _receiptBase64 = '';
 
+    function saveGeminiKey(val) {
+        const key = val.trim();
+        if (key) {
+            localStorage.setItem('gemini_api_key', key);
+            document.getElementById('gemini-key-status').textContent = '✅ מפתח נשמר';
+            document.getElementById('gemini-key-status').style.color = 'green';
+        } else {
+            localStorage.removeItem('gemini_api_key');
+            document.getElementById('gemini-key-status').textContent = '';
+        }
+    }
+    function getGeminiKey() {
+        return localStorage.getItem('gemini_api_key') || 'AIzaSyD28Dx7cSXBbkP2jkbxaXfkKnSm6svXNzM';
+    }
     function openReceiptScanner() {
         document.getElementById('receipt-modal').style.display = 'block';
         document.getElementById('receipt-preview').style.display = 'none';
@@ -1105,11 +1131,17 @@
         document.getElementById('receipt-loading').style.display = 'none';
         document.getElementById('receipt-file').value = '';
         _receiptBase64 = '';
+        // טען מפתח שמור
+        const saved = localStorage.getItem('gemini_api_key');
+        if (saved) {
+            document.getElementById('gemini-key-input').value = saved;
+            document.getElementById('gemini-key-status').textContent = '✅ מפתח שמור';
+            document.getElementById('gemini-key-status').style.color = 'green';
+        }
     }
     function closeReceiptScanner() {
         document.getElementById('receipt-modal').style.display = 'none';
     }
-    const GEMINI_KEY = 'AIzaSyD28Dx7cSXBbkP2jkbxaXfkKnSm6svXNzM';
     let _receiptMime = 'image/jpeg';
     function previewReceipt(input) {
         const file = input.files[0];
@@ -1164,7 +1196,7 @@
             try {
                 loadEl.textContent = '⏳ מנתח עם ' + model + '...';
                 const res = await fetch(
-                    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_KEY}`,
+                    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${getGeminiKey()}`,
                     {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
