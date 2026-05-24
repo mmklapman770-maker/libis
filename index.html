@@ -1109,20 +1109,35 @@
     function closeReceiptScanner() {
         document.getElementById('receipt-modal').style.display = 'none';
     }
+    const GEMINI_KEY = 'AIzaSyD28Dx7cSXBbkP2jkbxaXfkKnSm6svXNzM';
     let _receiptMime = 'image/jpeg';
     function previewReceipt(input) {
         const file = input.files[0];
         if (!file) return;
-        _receiptMime = file.type || 'image/jpeg';
         const reader = new FileReader();
         reader.onload = e => {
-            const dataUrl = e.target.result;
-            _receiptBase64 = dataUrl.split(',')[1];
-            const img = document.getElementById('receipt-preview');
-            img.src = dataUrl;
-            img.style.display = 'block';
-            document.getElementById('receipt-analyze-btn').style.display = 'block';
-            document.getElementById('receipt-results').style.display = 'none';
+            const img = new Image();
+            img.onload = () => {
+                // כיווץ תמונה ל-1200px מקסימום לפני שליחה
+                const MAX = 1200;
+                let w = img.width, h = img.height;
+                if (w > MAX || h > MAX) {
+                    if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+                    else       { w = Math.round(w * MAX / h); h = MAX; }
+                }
+                const canvas = document.createElement('canvas');
+                canvas.width = w; canvas.height = h;
+                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                const compressed = canvas.toDataURL('image/jpeg', 0.85);
+                _receiptBase64 = compressed.split(',')[1];
+                _receiptMime   = 'image/jpeg';
+                const preview = document.getElementById('receipt-preview');
+                preview.src = compressed;
+                preview.style.display = 'block';
+                document.getElementById('receipt-analyze-btn').style.display = 'block';
+                document.getElementById('receipt-results').style.display = 'none';
+            };
+            img.src = e.target.result;
         };
         reader.readAsDataURL(file);
     }
@@ -1131,70 +1146,69 @@
         const loadEl = document.getElementById('receipt-loading');
         const errEl  = document.getElementById('receipt-error');
         loadEl.style.display = 'block';
-        loadEl.textContent = '⏳ מכין...';
+        loadEl.textContent = '⏳ שולח לניתוח AI...';
         document.getElementById('receipt-analyze-btn').style.display = 'none';
         document.getElementById('receipt-results').style.display = 'none';
         errEl.style.display = 'none';
-        try {
-            const imageData = 'data:' + _receiptMime + ';base64,' + _receiptBase64;
-            const { data: { text } } = await Tesseract.recognize(
-                imageData,
-                'heb+eng',
-                { logger: m => {
-                    if (m.status === 'recognizing text')
-                        loadEl.textContent = '⏳ קורא... ' + Math.round((m.progress || 0) * 100) + '%';
-                    else if (m.status === 'loading tesseract core')
-                        loadEl.textContent = '⏳ טוען מנוע OCR...';
-                    else if (m.status === 'initializing api')
-                        loadEl.textContent = '⏳ מאתחל...';
-                }}
-            );
-            const items = parseReceiptText(text);
-            if (items.length === 0) throw new Error('לא זוהו פריטים — נסה תמונה ישרה וברורה יותר');
-            renderReceiptItems(items);
-        } catch(e) {
-            errEl.style.display = 'block';
-            errEl.textContent = '❌ ' + e.message;
-            document.getElementById('receipt-analyze-btn').style.display = 'block';
-            renderReceiptItems([
-                {name:'', unit:'יחידה', price:0},
-                {name:'', unit:'יחידה', price:0},
-                {name:'', unit:'יחידה', price:0}
-            ], true);
-            document.getElementById('receipt-results-title').textContent = '✏️ הכנס פריטים ידנית:';
-        }
-        loadEl.style.display = 'none';
-    }
 
-    function parseReceiptText(text) {
-        const SKIP = /סה.?כ|לתשלום|מע.?מ|שקית|שקיות|מזומן|חייב|אשראי|פריטים|תאריך|קבלה|חשבונית|לכבוד|קיבוץ|ע.ח|כרטיס|פ.א|שלום|מספר|קוד|ברקוד|cashier|total|vat|change|חנות|רשת|סניף/i;
-        const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 2);
-        const items = [];
-        for (const line of lines) {
-            if (SKIP.test(line)) continue;
-            const priceMatches = [...line.matchAll(/(\d{1,4}(?:[.,]\d{1,2})?)/g)];
-            if (priceMatches.length === 0) continue;
-            const prices = priceMatches
-                .map(m => parseFloat(m[1].replace(',', '.')))
-                .filter(p => p >= 1 && p < 2000);
-            if (prices.length === 0) continue;
-            const price = prices[prices.length - 1];
-            let name = line
-                .replace(/\d{6,}/g, '')
-                .replace(/\d+[.,]\d{1,2}/g, '')
-                .replace(/\b\d+\b/g, '')
-                .replace(/x\s*\d+/gi, '')
-                .replace(/[₪*@|\\\/]/g, '')
-                .replace(/\s+/g, ' ')
-                .trim();
-            if (name.length < 2) continue;
-            const unit = /קיל|ק"?ג|kg/i.test(name) ? 'קילו'
-                       : /ליט|לי'|ml|ל\./i.test(name) ? 'ליטר'
-                       : /חבילה|אריזה|מארז/i.test(name) ? 'חבילה'
-                       : 'יחידה';
-            items.push({ name: name.substring(0, 40), unit, price });
+        const MODELS = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-2.0-flash-lite'];
+        const PROMPT = `זוהי קבלת סופרמרקט ישראלית. חלץ את כל פריטי המזון עם המחיר לפריט/קילו/ליטר.
+החזר JSON בלבד ללא markdown:
+{"items":[{"name":"שם בעברית","unit":"יחידה","price":9.50}]}
+יחידות אפשריות: יחידה / קילו / ליטר / חבילה
+דלג על: שקיות, מע"מ, סה"כ, משלוח, קופה, תאריך, מספר קבלה.
+שמות קצרים וברורים בעברית.`;
+
+        let lastError = '';
+        for (const model of MODELS) {
+            try {
+                loadEl.textContent = '⏳ מנתח עם ' + model + '...';
+                const res = await fetch(
+                    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_KEY}`,
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{ parts: [
+                                { inline_data: { mime_type: 'image/jpeg', data: _receiptBase64 } },
+                                { text: PROMPT }
+                            ]}],
+                            generationConfig: { temperature: 0.1, maxOutputTokens: 1024 }
+                        })
+                    }
+                );
+                if (!res.ok) { lastError = 'HTTP ' + res.status; continue; }
+                const data = await res.json();
+                if (data.error) { lastError = data.error.message; continue; }
+                const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+                if (!rawText) { lastError = 'תגובה ריקה'; continue; }
+                // נסה לחלץ JSON
+                let parsed = null;
+                for (const pat of [/```json\s*([\s\S]*?)```/i, /```([\s\S]*?)```/, /(\{[\s\S]*\})/]) {
+                    const m = rawText.match(pat);
+                    if (m) { try { parsed = JSON.parse(m[1]); break; } catch(e) {} }
+                }
+                if (!parsed) { try { parsed = JSON.parse(rawText); } catch(e) {} }
+                if (parsed?.items?.length) {
+                    renderReceiptItems(parsed.items);
+                    loadEl.style.display = 'none';
+                    return;
+                }
+                lastError = 'לא זוהו פריטים בתגובה';
+            } catch(e) { lastError = e.message || String(e); }
         }
-        return items;
+
+        // כל המודלים נכשלו
+        loadEl.style.display = 'none';
+        errEl.style.display = 'block';
+        errEl.textContent = '❌ שגיאה: ' + lastError;
+        document.getElementById('receipt-analyze-btn').style.display = 'block';
+        renderReceiptItems([
+            {name:'', unit:'יחידה', price:0},
+            {name:'', unit:'יחידה', price:0},
+            {name:'', unit:'יחידה', price:0}
+        ], true);
+        document.getElementById('receipt-results-title').textContent = '✏️ הכנס פריטים ידנית:';
     }
 
     function renderReceiptItems(items, manual=false) {
