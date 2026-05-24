@@ -1693,23 +1693,31 @@
     };
 
     window.onload = async () => {
-        // טוען מפיירבייס — הנתונים האמיתיים תמיד מנצחים את localStorage
-        try {
-            const snap = await db.ref('libis/state').once('value');
-            const fbState = sanitizeState(snap.val());
-            if (fbState && fbState.menu && fbState.menu.length > 0) {
-                state = fbState;
-                localStorage.setItem('libis_final', JSON.stringify(state));
-            }
-        } catch(e) {
-            console.warn('לא הצלחתי לטעון מפיירבייס, עובד עם נתונים מקומיים');
+        // ===== מצב שחזור — קורא רק מ-localStorage, לא כותב לפיירבייס =====
+        const localRaw = localStorage.getItem('libis_final');
+        if (localRaw) {
+            try {
+                const localState = sanitizeState(JSON.parse(localRaw));
+                if (localState && localState.menu) {
+                    state = localState;
+                    // מציג כפתור שחזור אם יש נתונים
+                    const hasRealData = localState.bank && localState.bank.some(c => c.items && c.items.length > 2);
+                    if (hasRealData) {
+                        const btn = document.createElement('button');
+                        btn.textContent = '🔄 שחזר ושמור לענן';
+                        btn.style.cssText = 'position:fixed;top:80px;left:50%;transform:translateX(-50%);z-index:9999;background:#e53935;color:white;border:none;padding:14px 28px;border-radius:50px;font-family:Heebo;font-size:16px;font-weight:900;cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,0.3);';
+                        btn.onclick = () => { save(); btn.textContent = '✅ נשמר!'; setTimeout(() => btn.remove(), 2000); };
+                        document.body.appendChild(btn);
+                    }
+                }
+            } catch(e) {}
         }
-        runMigration(); // רק אחרי שהנתונים האמיתיים נטענו
+        runMigration();
         render();
 
-        // מאזין לשינויים ממכשירים אחרים בזמן אמת
+        // מאזין לשינויים ממכשירים אחרים בזמן אמת — מושבת זמנית בשחזור
         db.ref('libis/state').on('value', snap => {
-            if (_fbSaving) return; // מונע לולאה — השינוי שלנו עצמנו
+            if (_fbSaving) return;
             const s = sanitizeState(snap.val());
             if (s && s.menu) {
                 state = s;
