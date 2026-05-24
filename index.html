@@ -1145,8 +1145,9 @@
                 })
             });
             const data = await res.json();
+            if (data.error) throw new Error('שגיאת API: ' + data.error.message);
             const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-            console.log('Gemini response:', text);
+            if (!text) throw new Error('תגובה ריקה מ-AI. פרטים: ' + JSON.stringify(data).substring(0,200));
             // נסה לחלץ JSON בכמה דרכים
             let parsed = null;
             const patterns = [
@@ -1162,7 +1163,7 @@
                 // נסה לפרסר ישירות
                 try { parsed = JSON.parse(text); } catch(e) {}
             }
-            if (!parsed || !parsed.items) throw new Error('לא זוהו פריטים — נסה תמונה ברורה יותר');
+            if (!parsed || !parsed.items) throw new Error('תגובת AI: ' + text.substring(0, 200));
             renderReceiptItems(parsed.items || []);
         } catch(e) {
             alert('שגיאה בניתוח הקבלה: ' + e.message);
