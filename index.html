@@ -381,6 +381,7 @@
             <div id="receipt-loading" style="display:none;text-align:center;padding:20px;color:var(--teal);font-weight:700;">
                 ⏳ מנתח קבלה...
             </div>
+            <div id="receipt-error" style="display:none;background:#fff3f3;border:1px solid #ffcccc;border-radius:10px;padding:14px;margin-bottom:12px;font-size:12px;color:#c00;word-break:break-all;"></div>
 
             <!-- תוצאות -->
             <div id="receipt-results" style="display:none;">
@@ -1130,6 +1131,7 @@
         document.getElementById('receipt-loading').style.display = 'block';
         document.getElementById('receipt-analyze-btn').style.display = 'none';
         document.getElementById('receipt-results').style.display = 'none';
+        document.getElementById('receipt-error').style.display = 'none';
 
         const models = ['gemini-1.5-flash-latest', 'gemini-1.5-flash', 'gemini-2.0-flash'];
         let lastError = '';
@@ -1168,9 +1170,11 @@ Skip: bags, taxes, fees, totals. Keep names short in Hebrew.` }
             } catch(e) { lastError = e.message; }
         }
 
-        // כל המודלים נכשלו — פתח טופס ידני
+        // כל המודלים נכשלו — הצג שגיאה
         document.getElementById('receipt-loading').style.display = 'none';
         document.getElementById('receipt-analyze-btn').style.display = 'block';
+        document.getElementById('receipt-error').style.display = 'block';
+        document.getElementById('receipt-error').textContent = 'שגיאה: ' + lastError;
         renderReceiptItems([
             {name:'', unit:'יחידה', price:0},
             {name:'', unit:'יחידה', price:0},
