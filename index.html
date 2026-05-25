@@ -354,6 +354,9 @@
         <button onclick="openReceiptScanner()" style="display:flex;align-items:center;gap:8px;background:var(--teal);color:white;border:none;padding:10px 20px;border-radius:50px;font-family:'Heebo';font-size:14px;font-weight:700;cursor:pointer;">
             📸 סרוק קבלה
         </button>
+        <button onclick="syncFromSheets()" id="sheets-sync-btn" style="display:flex;align-items:center;gap:8px;background:#34a853;color:white;border:none;padding:10px 20px;border-radius:50px;font-family:'Heebo';font-size:14px;font-weight:700;cursor:pointer;">
+            🔄 סנכרן מגוגל שיטס
+        </button>
     </div>
     <div id="bank-list-container"></div>
 </div>
@@ -1123,6 +1126,96 @@
     function getGeminiKey() {
         return localStorage.getItem('gemini_api_key') || 'AIzaSyD28Dx7cSXBbkP2jkbxaXfkKnSm6svXNzM';
     }
+    const SHEETS_CSV_URL = 'https://docs.google.com/spreadsheets/d/15o6DKXX6hjgigb0P0OSP9SvhRjL26Qod-mA_cDOzI78/export?format=csv&gid=0';
+
+    // מיפוי שמות קטגוריות מהשיטס לקטגוריות הבנק
+    const SHEETS_CAT_MAP = {
+        'מוצרי חלב':       'מוצרי חלב',
+        'פירות וירקות':    'ירקות ופירות',
+        'ירקות ופירות':    'ירקות ופירות',
+        'קמח ובצק':        'קמח ובצקים',
+        'קמח ובצקים':      'קמח ובצקים',
+        'דגים וקפואים':    'דגים וקפואים',
+        'פיצוחים ותבלינים':'פיצוחים ותבלינים',
+        'מארזים':          'מארזים',
+        'מאפים ולחמים':    'מאפים ולחמים',
+        'שונות':           'שונות',
+    };
+
+    function detectUnit(name) {
+        if (/קיל|ק"?ג/i.test(name)) return 'קילו';
+        if (/ליט|ל'/i.test(name))    return 'ליטר';
+        if (/שק\b/i.test(name))      return 'שק';
+        if (/חבילה|מארז|אריזה/i.test(name)) return 'חבילה';
+        return 'יחידה';
+    }
+
+    async function syncFromSheets() {
+        const btn = document.getElementById('sheets-sync-btn');
+        btn.textContent = '⏳ מסנכרן...';
+        btn.disabled = true;
+        try {
+            const res = await fetch(SHEETS_CSV_URL, { redirect: 'follow' });
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            const csv = await res.text();
+            const rows = csv.split('\n').map(r => r.trim()).filter(r => r);
+
+            // קרא שורות CSV
+            const sheetItems = [];
+            for (const row of rows) {
+                const parts = row.split(',');
+                if (parts.length < 1) continue;
+                const name  = (parts[0] || '').trim().replace(/^"|"$/g, '');
+                const price = parseFloat((parts[1] || '').trim()) || 0;
+                const cat   = (parts[2] || '').trim().replace(/^"|"$/g, '');
+                if (!name) continue;
+                sheetItems.push({ name, price, cat });
+            }
+
+            if (sheetItems.length === 0) throw new Error('לא נמצאו פריטים בגיליון');
+
+            // בנה מחדש את הבנק לפי קטגוריות
+            const newBank = BANK_CATS.map(c => {
+                const existing = (state.bank || []).find(b => b.cat === c) || { cat: c, items: [] };
+                // שמור פריטים קיימים שאינם בשיטס לפי שם
+                return { cat: c, items: [] };
+            });
+
+            let nextId = Math.max(1000, ...((state.bank||[]).flatMap(c => c.items.map(i => i.id||0)))) + 1;
+
+            for (const si of sheetItems) {
+                const mappedCat = SHEETS_CAT_MAP[si.cat] || 'שונות';
+                const catObj = newBank.find(b => b.cat === mappedCat) || newBank.find(b => b.cat === 'שונות');
+                if (!catObj) continue;
+                catObj.items.push({
+                    id:    nextId++,
+                    name:  si.name,
+                    unit:  detectUnit(si.name),
+                    price: si.price
+                });
+            }
+
+            state.bank = newBank;
+            save();
+            renderBank();
+            btn.textContent = '✅ סונכרן בהצלחה!';
+            btn.style.background = '#1a7a3a';
+            setTimeout(() => {
+                btn.textContent = '🔄 סנכרן מגוגל שיטס';
+                btn.style.background = '#34a853';
+                btn.disabled = false;
+            }, 3000);
+        } catch(e) {
+            btn.textContent = '❌ שגיאה: ' + e.message;
+            btn.style.background = '#c00';
+            setTimeout(() => {
+                btn.textContent = '🔄 סנכרן מגוגל שיטס';
+                btn.style.background = '#34a853';
+                btn.disabled = false;
+            }, 4000);
+        }
+    }
+
     function openReceiptScanner() {
         document.getElementById('receipt-modal').style.display = 'block';
         document.getElementById('receipt-preview').style.display = 'none';
