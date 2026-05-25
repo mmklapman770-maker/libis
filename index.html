@@ -1174,28 +1174,34 @@
 
             if (sheetItems.length === 0) throw new Error('לא נמצאו פריטים בגיליון');
 
-            // בנה מחדש את הבנק לפי קטגוריות
-            const newBank = BANK_CATS.map(c => {
-                const existing = (state.bank || []).find(b => b.cat === c) || { cat: c, items: [] };
-                // שמור פריטים קיימים שאינם בשיטס לפי שם
-                return { cat: c, items: [] };
+            // מיזוג — שמור את הבנק הקיים, עדכן/הוסף מהשיטס
+            const mergedBank = BANK_CATS.map(c => {
+                const existing = (state.bank || []).find(b => b.cat === c);
+                return { cat: c, items: existing ? [...existing.items] : [] };
             });
 
             let nextId = Math.max(1000, ...((state.bank||[]).flatMap(c => c.items.map(i => i.id||0)))) + 1;
 
             for (const si of sheetItems) {
                 const mappedCat = SHEETS_CAT_MAP[si.cat] || 'שונות';
-                const catObj = newBank.find(b => b.cat === mappedCat) || newBank.find(b => b.cat === 'שונות');
+                const catObj = mergedBank.find(b => b.cat === mappedCat) || mergedBank.find(b => b.cat === 'שונות');
                 if (!catObj) continue;
-                catObj.items.push({
-                    id:    nextId++,
-                    name:  si.name,
-                    unit:  detectUnit(si.name),
-                    price: si.price
-                });
+                // אם פריט עם אותו שם כבר קיים — עדכן מחיר בלבד
+                const existing = catObj.items.find(i => i.name === si.name);
+                if (existing) {
+                    if (si.price > 0) existing.price = si.price;
+                } else {
+                    // פריט חדש — הוסף
+                    catObj.items.push({
+                        id:    nextId++,
+                        name:  si.name,
+                        unit:  detectUnit(si.name),
+                        price: si.price
+                    });
+                }
             }
 
-            state.bank = newBank;
+            state.bank = mergedBank;
             save();
             renderBank();
             btn.textContent = '✅ סונכרן בהצלחה!';
