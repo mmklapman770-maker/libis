@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>ליביס קייטרינג – תפריט הזמנות</title>
+<link rel="icon" type="image/png" href="libis-logo.png">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&family=Frank+Ruhl+Libre:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --teal:#008291; --teal2:#006b78; --teal-light:#e0f4f6;
+  --gold:#c8941a; --gold2:#e6b740; --gold-light:#fdf5e0;
+  --dark:#111;   --mid:#555;      --light:#f7f4ef;
+  --white:#fff;  --card-shadow:0 2px 20px rgba(0,0,0,0.08);
+  --radius:14px;
+}
+html{scroll-behavior:smooth;}
+body{font-family:'Heebo',sans-serif;background:var(--light);color:var(--dark);direction:rtl;min-height:100vh;padding-bottom:100px;}
+
+/* ── HEADER ── */
+.site-header{background:var(--teal);position:sticky;top:0;z-index:200;box-shadow:0 2px 12px rgba(0,130,145,.3);}
+.header-inner{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;max-width:700px;margin:0 auto;}
+.header-logo{display:flex;align-items:center;gap:10px;}
+.header-logo img{width:46px;height:46px;border-radius:50%;border:2px solid rgba(255,255,255,.35);object-fit:contain;background:rgba(255,255,255,.12);padding:4px;}
+.logo-text h1{font-family:'Frank Ruhl Libre',serif;color:#fff;font-size:20px;font-weight:900;line-height:1.1;}
+.logo-text p{color:rgba(255,255,255,.65);font-size:11px;}
+.header-cart-btn{background:var(--gold);color:#fff;border:none;border-radius:50px;padding:9px 18px;font-family:'Heebo',sans-serif;font-size:14px;font-weight:900;cursor:pointer;display:flex;align-items:center;gap:8px;transition:.2s;}
+.header-cart-btn:hover{background:var(--gold2);}
+.cart-badge{background:#fff;color:var(--gold);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;}
+
+/* ── HERO ── */
+.hero{background:linear-gradient(160deg,var(--teal2) 0%,var(--teal) 60%,#00a8bb 100%);padding:36px 20px 44px;text-align:center;position:relative;overflow:hidden;}
+.hero::after{content:'';position:absolute;bottom:-2px;left:0;right:0;height:32px;background:var(--light);clip-path:ellipse(55% 100% at 50% 100%);}
+.hero h2{font-family:'Frank Ruhl Libre',serif;color:#fff;font-size:28px;font-weight:900;margin-bottom:8px;text-shadow:0 2px 8px rgba(0,0,0,.2);}
+.hero p{color:rgba(255,255,255,.75);font-size:14px;max-width:280px;margin:0 auto 16px;}
+.hero-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);border-radius:50px;padding:6px 16px;color:rgba(255,255,255,.9);font-size:12px;font-weight:700;}
+
+/* ── CATEGORY NAV ── */
+.cat-nav{background:#fff;position:sticky;top:74px;z-index:100;border-bottom:2px solid var(--teal-light);box-shadow:0 2px 8px rgba(0,0,0,.05);}
+.cat-nav-inner{display:flex;gap:4px;padding:10px 14px;overflow-x:auto;scrollbar-width:none;max-width:700px;margin:0 auto;}
+.cat-nav-inner::-webkit-scrollbar{display:none;}
+.cat-tab{border:1.5px solid #ddd;background:#fff;color:var(--mid);border-radius:50px;padding:7px 16px;font-family:'Heebo',sans-serif;font-size:13px;font-weight:700;white-space:nowrap;cursor:pointer;transition:.2s;flex-shrink:0;}
+.cat-tab.active,.cat-tab:hover{background:var(--teal);color:#fff;border-color:var(--teal);}
+
+/* ── SECTIONS ── */
+.main-content{max-width:700px;margin:0 auto;padding:0 14px;}
+.cat-section{padding-top:28px;}
+.cat-section-title{font-family:'Frank Ruhl Libre',serif;font-size:21px;font-weight:700;color:var(--teal2);margin-bottom:14px;display:flex;align-items:center;gap:12px;}
+.cat-section-title::before{content:'';width:4px;height:24px;background:var(--gold);border-radius:2px;flex-shrink:0;}
+
+/* ── PRODUCT GRID ── */
+.prod-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+
+/* ── PRODUCT CARD ── */
+.prod-card{background:#fff;border-radius:var(--radius);box-shadow:var(--card-shadow);overflow:hidden;display:flex;flex-direction:column;transition:transform .15s,box-shadow .15s;}
+.prod-card:active{transform:scale(0.97);}
+.prod-img{position:relative;aspect-ratio:4/3;overflow:hidden;background:linear-gradient(135deg,var(--teal-light),#c5e8ec);}
+.prod-img img{width:100%;height:100%;object-fit:cover;display:block;}
+.prod-img-ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:48px;}
+.prod-price-tag{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.55));padding:20px 10px 8px;display:flex;align-items:flex-end;justify-content:flex-end;}
+.prod-price{font-family:'Frank Ruhl Libre',serif;color:var(--gold2);font-size:17px;font-weight:700;text-shadow:0 1px 3px rgba(0,0,0,.4);}
+.prod-body{padding:11px 10px 10px;flex:1;display:flex;flex-direction:column;gap:6px;}
+.prod-name{font-family:'Frank Ruhl Libre',serif;font-size:14px;font-weight:700;color:var(--dark);line-height:1.3;flex:1;}
+.prod-desc{font-size:11px;color:#999;line-height:1.4;}
+.prod-add-btn{width:100%;background:var(--teal);color:#fff;border:none;border-radius:9px;padding:9px 0;font-family:'Heebo',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:.2s;display:flex;align-items:center;justify-content:center;gap:5px;}
+.prod-add-btn:hover{background:var(--teal2);}
+.prod-add-btn.in-cart{background:var(--gold);}
+
+/* ── FLOATING CART ── */
+.cart-fab{display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--teal);color:#fff;border:none;border-radius:50px;padding:14px 28px;font-family:'Heebo',sans-serif;font-size:15px;font-weight:900;cursor:pointer;align-items:center;gap:12px;box-shadow:0 4px 28px rgba(0,130,145,.45);z-index:150;white-space:nowrap;}
+.cart-fab .fab-badge{background:var(--gold);color:#fff;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;flex-shrink:0;}
+
+/* ── BOTTOM SHEETS ── */
+.sheet-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;}
+.sheet-overlay.open{display:block;}
+.sheet{position:fixed;bottom:0;left:0;right:0;background:#fff;border-radius:22px 22px 0 0;max-height:92vh;overflow-y:auto;z-index:301;transform:translateY(100%);transition:transform .3s cubic-bezier(.32,.72,0,1);}
+.sheet.open{transform:translateY(0);}
+.sheet-handle{width:40px;height:4px;background:#ddd;border-radius:2px;margin:12px auto 0;}
+.sheet-hdr{background:var(--teal);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;}
+.sheet-hdr h3{color:#fff;margin:0;font-family:'Frank Ruhl Libre',serif;font-size:17px;font-weight:700;}
+.sheet-close{background:none;border:none;color:rgba(255,255,255,.7);font-size:26px;cursor:pointer;line-height:1;padding:0;display:flex;align-items:center;}
+.sheet-body{padding:20px;}
+
+/* ── CART ITEMS ── */
+.cart-row{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid #f0eee8;}
+.cart-info{flex:1;}
+.cart-name{font-weight:700;font-size:14px;line-height:1.3;}
+.cart-opt{font-size:11px;color:#aaa;margin-top:2px;}
+.cart-price{font-family:'Frank Ruhl Libre',serif;font-size:14px;font-weight:700;color:var(--gold);margin-top:4px;}
+.qty-row{display:flex;align-items:center;gap:8px;}
+.qty-btn{width:30px;height:30px;border-radius:50%;border:1.5px solid var(--teal);background:#fff;color:var(--teal);font-size:18px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;}
+.qty-n{font-weight:900;min-width:20px;text-align:center;font-size:15px;}
+.cart-total-row{display:flex;justify-content:space-between;align-items:center;padding:16px 0;border-top:2px solid #f0eee8;margin-top:6px;}
+.cart-total-label{font-weight:900;font-size:16px;}
+.cart-total-val{font-family:'Frank Ruhl Libre',serif;font-size:22px;font-weight:700;color:var(--gold);}
+
+/* ── OPTION BUTTONS ── */
+.opt-btn{width:100%;background:#fff;border:2px solid #e8e8e8;border-radius:11px;padding:13px 16px;font-family:'Heebo',sans-serif;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:8px;text-align:right;transition:.2s;color:var(--dark);}
+.opt-btn:hover{border-color:var(--teal);background:var(--teal-light);}
+
+/* ── CHECKOUT FORM ── */
+.form-field{margin-bottom:14px;}
+.form-field label{display:block;font-size:12px;font-weight:700;color:var(--mid);margin-bottom:5px;}
+.form-field input,.form-field textarea{width:100%;padding:12px 14px;border:1.5px solid #e0e0e0;border-radius:10px;font-family:'Heebo',sans-serif;font-size:15px;outline:none;transition:.2s;background:#fff;}
+.form-field input:focus,.form-field textarea:focus{border-color:var(--teal);}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+/* ── BUTTONS ── */
+.btn-teal{width:100%;background:var(--teal);color:#fff;border:none;border-radius:12px;padding:15px;font-family:'Heebo',sans-serif;font-size:16px;font-weight:900;cursor:pointer;transition:.2s;display:flex;align-items:center;justify-content:center;gap:10px;}
+.btn-teal:hover{background:var(--teal2);}
+.btn-gold{width:100%;background:var(--gold);color:#fff;border:none;border-radius:12px;padding:15px;font-family:'Heebo',sans-serif;font-size:16px;font-weight:900;cursor:pointer;transition:.2s;display:flex;align-items:center;justify-content:center;gap:10px;margin-top:10px;}
+.btn-gold:hover{background:var(--gold2);color:var(--dark);}
+.btn-hint{text-align:center;font-size:11px;color:#bbb;margin-top:10px;}
+
+/* ── SUCCESS ── */
+.success-msg{display:none;position:fixed;top:90px;left:50%;transform:translateX(-50%);background:var(--teal);color:#fff;padding:14px 28px;border-radius:50px;font-weight:900;font-size:14px;z-index:500;box-shadow:0 4px 20px rgba(0,130,145,.4);white-space:nowrap;}
+
+/* ── LOADING ── */
+.loading-screen{position:fixed;inset:0;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:999;}
+.loading-screen img{width:80px;height:80px;border-radius:50%;border:3px solid var(--teal-light);}
+.loading-spinner{width:40px;height:40px;border:3px solid var(--teal-light);border-top-color:var(--teal);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading-screen p{color:var(--mid);font-size:14px;}
+
+/* ── EMPTY ── */
+.empty-state{text-align:center;padding:60px 20px;color:#bbb;}
+.empty-state div{font-size:54px;margin-bottom:12px;}
+.empty-state p{font-size:15px;}
+
+/* ── MOBILE ── */
+@media(max-width:480px){
+  .prod-grid{grid-template-columns:1fr 1fr;gap:10px;}
+  .hero h2{font-size:24px;}
+  .form-row{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- Loading -->
+<div class="loading-screen" id="loading-screen">
+  <img src="libis-logo.png" onerror="this.style.display='none'">
+  <div class="loading-spinner"></div>
+  <p>טוען תפריט...</p>
+</div>
+
+<!-- Header -->
+<header class="site-header">
+  <div class="header-inner">
+    <div class="header-logo">
+      <img src="libis-logo.png" onerror="this.style.display='none'" alt="ליביס">
+      <div class="logo-text">
+        <h1>ליביס קייטרינג</h1>
+        <p>קייטרינג כשר פרימיום</p>
+      </div>
+    </div>
+    <button class="header-cart-btn" id="header-cart-btn" onclick="openCart()" style="display:none;">
+      🛒 <div class="cart-badge" id="header-badge">0</div>
+    </button>
+  </div>
+</header>
+
+<!-- Hero -->
+<div class="hero">
+  <h2>תפריט הזמנות</h2>
+  <p>בחרו מהמגוון שלנו ואנחנו נדאג לשאר</p>
+  <div class="hero-badge">✡ כשר למהדרין</div>
+</div>
+
+<!-- Category Nav -->
+<nav class="cat-nav">
+  <div class="cat-nav-inner" id="cat-nav-inner"></div>
+</nav>
+
+<!-- Products -->
+<main class="main-content" id="main-content"></main>
+
+<!-- FAB cart -->
+<button class="cart-fab" id="cart-fab" onclick="openCart()">
+  🛒 לעגלה — <span id="fab-total">₪0</span>
+  <div class="fab-badge" id="fab-badge">0</div>
+</button>
+
+<!-- SUCCESS -->
+<div class="success-msg" id="success-msg">🎉 ההזמנה נשלחה בוואטסאפ!</div>
+
+<!-- ── OPTIONS SHEET ── -->
+<div class="sheet-overlay" id="opt-overlay" onclick="closeSheet('opt')"></div>
+<div class="sheet" id="opt-sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-hdr">
+    <h3 id="opt-title">בחר מילוי</h3>
+    <button class="sheet-close" onclick="closeSheet('opt')">×</button>
+  </div>
+  <div class="sheet-body" id="opt-body"></div>
+</div>
+
+<!-- ── CART SHEET ── -->
+<div class="sheet-overlay" id="cart-overlay" onclick="closeSheet('cart')"></div>
+<div class="sheet" id="cart-sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-hdr">
+    <h3>🛒 הסל שלך</h3>
+    <button class="sheet-close" onclick="closeSheet('cart')">×</button>
+  </div>
+  <div class="sheet-body">
+    <div id="cart-items"></div>
+    <div class="cart-total-row">
+      <span class="cart-total-label">סה"כ</span>
+      <span class="cart-total-val" id="cart-grand">₪0</span>
+    </div>
+    <button class="btn-gold" onclick="goCheckout()">להמשך ← שליחת הזמנה</button>
+  </div>
+</div>
+
+<!-- ── CHECKOUT SHEET ── -->
+<div class="sheet-overlay" id="checkout-overlay" onclick="closeSheet('checkout')"></div>
+<div class="sheet" id="checkout-sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-hdr">
+    <h3>📋 פרטי ההזמנה</h3>
+    <button class="sheet-close" onclick="closeSheet('checkout')">×</button>
+  </div>
+  <div class="sheet-body">
+    <div class="form-row">
+      <div class="form-field">
+        <label>שם מלא *</label>
+        <input id="f-name" type="text" placeholder="ישראל ישראלי">
+      </div>
+      <div class="form-field">
+        <label>טלפון *</label>
+        <input id="f-phone" type="tel" placeholder="050-0000000">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-field">
+        <label>תאריך האירוע</label>
+        <input id="f-date" type="date">
+      </div>
+      <div class="form-field">
+        <label>מספר סועדים</label>
+        <input id="f-guests" type="number" placeholder="50" min="1">
+      </div>
+    </div>
+    <div class="form-field">
+      <label>מיקום / כתובת</label>
+      <input id="f-location" type="text" placeholder="רחוב ועיר">
+    </div>
+    <div class="form-field">
+      <label>הערות / בקשות מיוחדות</label>
+      <textarea id="f-notes" rows="3" placeholder="אלרגיות, בקשות מיוחדות..."></textarea>
+    </div>
+    <button class="btn-teal" onclick="submitOrder()">📲 שלח הזמנה בוואטסאפ</button>
+    <p class="btn-hint">ישלח למנהל ואליך בוואטסאפ</p>
+  </div>
+</div>
+
+<script>
+const MANAGER_WA = '972587703135';
+const FIREBASE_CONFIG = {
+  apiKey:"AIzaSyDKUC-BJaPXAeiLkpGNYVrk-kJlk9oADEg",
+  authDomain:"libis-e69a8.firebaseapp.com",
+  databaseURL:"https://libis-e69a8-default-rtdb.firebaseio.com",
+  projectId:"libis-e69a8",
+  storageBucket:"libis-e69a8.firebasestorage.app",
+  messagingSenderId:"41659000091",
+  appId:"1:41659000091:web:e15414c6497dc981af1fbe"
+};
+
+firebase.initializeApp(FIREBASE_CONFIG);
+const db = firebase.database();
+
+let menu = [];
+let cart = [];
+let pendingItem = null;
+
+// ── Load data ──
+db.ref('libis/state').once('value').then(snap => {
+  const state = snap.val();
+  if (state && state.menu) {
+    menu = Array.isArray(state.menu) ? state.menu : Object.values(state.menu);
+    renderAll();
+  } else {
+    document.getElementById('main-content').innerHTML = '<div class="empty-state"><div>🍽️</div><p>התפריט יהיה זמין בקרוב</p></div>';
+  }
+  document.getElementById('loading-screen').style.display = 'none';
+}).catch(() => {
+  document.getElementById('loading-screen').style.display = 'none';
+  document.getElementById('main-content').innerHTML = '<div class="empty-state"><div>⚠️</div><p>שגיאה בטעינת התפריט, נסה שוב</p></div>';
+});
+
+// ── Render ──
+function renderAll() {
+  const nav  = document.getElementById('cat-nav-inner');
+  const main = document.getElementById('main-content');
+  nav.innerHTML  = '';
+  main.innerHTML = '';
+
+  const visible = menu.filter(c => c.items && c.items.some(i => !i.catHidden));
+  if (!visible.length) {
+    main.innerHTML = '<div class="empty-state"><div>🍽️</div><p>אין מוצרים להצגה כרגע</p></div>';
+    return;
+  }
+
+  // nav pills
+  nav.innerHTML = visible.map((c,i) =>
+    `<button class="cat-tab${i===0?' active':''}" onclick="scrollTo('sec-${i}',this)">${c.cat}</button>`
+  ).join('');
+
+  // sections
+  main.innerHTML = visible.map((c, ci) => {
+    const items = c.items.filter(i => !i.catHidden);
+    const cards = items.map(item => buildCard(item, menu.indexOf(c), c.items.indexOf(item))).join('');
+    return `<section class="cat-section" id="sec-${ci}">
+      <div class="cat-section-title">${c.cat}</div>
+      <div class="prod-grid">${cards}</div>
+    </section>`;
+  }).join('');
+}
+
+function buildCard(item, ci, ii) {
+  const inCart = cart.filter(c => c.baseId === item.id+'').reduce((s,c)=>s+c.qty,0);
+  const imgEl  = item.image
+    ? `<img src="${item.image}" alt="${item.name}" onerror="this.parentElement.innerHTML='<div class=\\'prod-img-ph\\'>${emoji(item.name)}</div>'">`
+    : `<div class="prod-img-ph">${emoji(item.name)}</div>`;
+  return `<div class="prod-card">
+    <div class="prod-img">
+      ${imgEl}
+      <div class="prod-price-tag"><span class="prod-price">₪${item.price}</span></div>
+    </div>
+    <div class="prod-body">
+      <div class="prod-name">${item.name}</div>
+      ${item.catDesc ? `<div class="prod-desc">${item.catDesc}</div>` : ''}
+      <button class="prod-add-btn${inCart?' in-cart':''}" onclick="handleAdd(${ci},${ii})">
+        ${inCart ? `✓ בסל (${inCart})` : '+ הוסף לסל'}
+      </button>
+    </div>
+  </div>`;
+}
+
+function emoji(n) {
+  if (/פסטה|מוקרם|בטטה/i.test(n)) return '🍝';
+  if (/סלמון|דג|מושט|שיפוד/i.test(n)) return '🐟';
+  if (/קורסון|קוראסון/i.test(n)) return '🥐';
+  if (/כריכ/i.test(n)) return '🥪';
+  if (/סלט/i.test(n)) return '🥗';
+  if (/קיש|פשטיד/i.test(n)) return '🥧';
+  if (/פוקצ/i.test(n)) return '🫓';
+  if (/מוס|פחזנ|סופל|כוסית/i.test(n)) return '🍮';
+  return '🍽️';
+}
+
+// ── Category scroll ──
+function scrollTo(id, btn) {
+  document.querySelectorAll('.cat-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const el = document.getElementById(id);
+  if (el) el.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+// ── Add to cart ──
+function handleAdd(ci, ii) {
+  const item = menu[ci].items[ii];
+  if (item.options && item.options.length) {
+    pendingItem = {ci, ii};
+    document.getElementById('opt-title').textContent = item.name;
+    document.getElementById('opt-body').innerHTML = item.options.map(o =>
+      `<button class="opt-btn" onclick="pickOpt('${o.replace(/'/g,"\\'")}')">🔘 ${o}</button>`
+    ).join('');
+    openSheet('opt');
+  } else {
+    addCart(item.id+'', item.name, null, item.price);
+  }
+}
+
+function pickOpt(opt) {
+  if (!pendingItem) return;
+  const item = menu[pendingItem.ci].items[pendingItem.ii];
+  addCart(item.id+'_'+opt, item.name+' — '+opt, opt, item.price);
+  closeSheet('opt');
+  pendingItem = null;
+}
+
+function addCart(id, name, opt, price) {
+  const ex = cart.find(c=>c.id===id);
+  if (ex) ex.qty++;
+  else cart.push({id, baseId:id.split('_')[0], name, opt, qty:1, price});
+  updateUI();
+}
+
+function changeQty(idx, d) {
+  cart[idx].qty += d;
+  if (cart[idx].qty <= 0) cart.splice(idx,1);
+  updateUI();
+  renderCartItems();
+}
+
+// ── UI updates ──
+function updateUI() {
+  const total = cart.reduce((s,c)=>s+c.qty,0);
+  const sum   = cart.reduce((s,c)=>s+c.qty*c.price,0);
+  const fab   = document.getElementById('cart-fab');
+  const hBtn  = document.getElementById('header-cart-btn');
+  fab.style.display  = total ? 'flex' : 'none';
+  hBtn.style.display = total ? 'flex' : 'none';
+  document.getElementById('fab-badge').textContent    = total;
+  document.getElementById('header-badge').textContent = total;
+  document.getElementById('fab-total').textContent    = '₪'+sum;
+  // refresh cards
+  renderAll();
+}
+
+// ── Cart sheet ──
+function openCart() {
+  renderCartItems();
+  openSheet('cart');
+}
+
+function renderCartItems() {
+  const el = document.getElementById('cart-items');
+  const sum = cart.reduce((s,c)=>s+c.qty*c.price,0);
+  if (!cart.length) {
+    el.innerHTML = '<div style="text-align:center;padding:40px;color:#ccc;font-size:15px;">הסל ריק</div>';
+  } else {
+    el.innerHTML = cart.map((c,i)=>`
+      <div class="cart-row">
+        <div class="cart-info">
+          <div class="cart-name">${c.name}</div>
+          ${c.opt?`<div class="cart-opt">${c.opt}</div>`:''}
+          <div class="cart-price">₪${c.qty*c.price}</div>
+        </div>
+        <div class="qty-row">
+          <button class="qty-btn" onclick="changeQty(${i},-1)">−</button>
+          <span class="qty-n">${c.qty}</span>
+          <button class="qty-btn" onclick="changeQty(${i},1)">+</button>
+        </div>
+      </div>`).join('');
+  }
+  document.getElementById('cart-grand').textContent = '₪'+sum;
+}
+
+function goCheckout() {
+  closeSheet('cart');
+  setTimeout(()=>openSheet('checkout'), 320);
+}
+
+// ── Submit order ──
+function submitOrder() {
+  const name  = document.getElementById('f-name').value.trim();
+  const phone = document.getElementById('f-phone').value.trim();
+  const date  = document.getElementById('f-date').value;
+  const guests= document.getElementById('f-guests').value;
+  const loc   = document.getElementById('f-location').value.trim();
+  const notes = document.getElementById('f-notes').value.trim();
+  if (!name||!phone){alert('נא למלא שם וטלפון');return;}
+
+  const sum   = cart.reduce((s,c)=>s+c.qty*c.price,0);
+  const lines = cart.map(c=>`• ${c.qty}× ${c.name} — ₪${c.qty*c.price}`).join('\n');
+
+  const mgr  = `🍽️ *הזמנה חדשה – ליביס קייטרינג*\n\n👤 *שם:* ${name}\n📱 *טלפון:* ${phone}\n📅 *תאריך:* ${date||'לא צוין'}\n👥 *סועדים:* ${guests||'לא צוין'}\n📍 *מיקום:* ${loc||'לא צוין'}\n\n🛒 *פריטים:*\n${lines}\n\n💰 *סה"כ: ₪${sum}*\n\n📝 *הערות:* ${notes||'אין'}`;
+  const cust = `🍽️ *ליביס קייטרינג – אישור קבלת הזמנה*\n\nשלום ${name}! 🎉\nהזמנתך התקבלה בהצלחה.\n\n🛒 *סיכום הזמנתך:*\n${lines}\n\n💰 *סה"כ: ₪${sum}*\n📅 *תאריך:* ${date||'לא צוין'}\n\nניצור איתך קשר בקרוב לאישור סופי.\nתודה שבחרת בליביס! ✨`;
+
+  window.open('https://wa.me/'+MANAGER_WA+'?text='+encodeURIComponent(mgr),'_blank');
+  setTimeout(()=>{
+    const cp = phone.replace(/\D/g,'').replace(/^0/,'972');
+    window.open('https://wa.me/'+cp+'?text='+encodeURIComponent(cust),'_blank');
+  },1200);
+
+  cart = [];
+  updateUI();
+  closeSheet('checkout');
+  ['f-name','f-phone','f-date','f-guests','f-location','f-notes'].forEach(id=>document.getElementById(id).value='');
+  const s = document.getElementById('success-msg');
+  s.style.display='block';
+  setTimeout(()=>s.style.display='none',4000);
+}
+
+// ── Sheet helpers ──
+function openSheet(id) {
+  document.getElementById(id+'-overlay').classList.add('open');
+  const sh = document.getElementById(id+'-sheet');
+  sh.style.display='block';
+  requestAnimationFrame(()=>sh.classList.add('open'));
+}
+function closeSheet(id) {
+  document.getElementById(id+'-overlay').classList.remove('open');
+  const sh = document.getElementById(id+'-sheet');
+  sh.classList.remove('open');
+  setTimeout(()=>sh.style.display='none',320);
+}
+</script>
+</body>
+</html>
