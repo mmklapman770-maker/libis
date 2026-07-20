@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ליביס – מערכת ניהול פרימיום</title>
     <link rel="icon" type="image/png" href="libis-logo.png">
-    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
@@ -275,6 +275,66 @@
             .footer-stats .stat-value { font-size: 14px; }
             .card { padding: 12px; }
         }
+
+        /* ===== קטלוג לקוחות – עיצוב יוקרה ===== */
+        #catalog-tab { background:#f9f5ef; padding-bottom:140px; min-height:calc(100vh - 60px); }
+        .cat-hero { background:#1a3330; padding:36px 20px 28px; text-align:center; position:relative; overflow:hidden; }
+        .cat-hero::before { content:''; position:absolute; inset:0; background:repeating-linear-gradient(45deg,transparent,transparent 20px,rgba(200,148,26,0.03) 20px,rgba(200,148,26,0.03) 21px); }
+        .cat-hero-logo { width:70px; height:70px; border-radius:50%; border:2px solid rgba(200,148,26,0.5); margin:0 auto 14px; object-fit:contain; background:rgba(255,255,255,0.08); padding:6px; display:block; }
+        .cat-hero-title { font-family:'Playfair Display',serif; color:#e6b740; font-size:26px; font-weight:700; margin:0 0 6px; letter-spacing:1px; }
+        .cat-hero-sub { color:rgba(255,255,255,0.6); font-size:13px; margin:0; }
+        .cat-hero-edit { position:absolute; top:14px; left:14px; background:rgba(255,255,255,0.12); color:rgba(255,255,255,0.8); border:1px solid rgba(255,255,255,0.2); border-radius:50px; padding:6px 14px; font-family:'Heebo',sans-serif; font-size:12px; font-weight:700; cursor:pointer; }
+        .cat-admin-banner { display:none; background:#fff8e1; border-bottom:2px solid #f0c040; padding:10px 18px; font-size:13px; font-weight:700; color:#856404; align-items:center; justify-content:space-between; gap:10px; }
+        .cat-filters { display:flex; gap:8px; padding:16px 16px 4px; overflow-x:auto; scrollbar-width:none; }
+        .cat-filters::-webkit-scrollbar { display:none; }
+        .cat-pill { border:1.5px solid #1a3330; color:#1a3330; background:transparent; border-radius:50px; padding:7px 18px; font-family:'Heebo',sans-serif; font-size:13px; font-weight:700; white-space:nowrap; cursor:pointer; transition:.2s; flex-shrink:0; }
+        .cat-pill.active,.cat-pill:hover { background:#1a3330; color:#fff; }
+        .cat-section-hdr { font-family:'Playfair Display',serif; color:#1a3330; font-size:19px; font-weight:700; padding:18px 16px 10px; display:flex; align-items:center; gap:10px; }
+        .cat-section-hdr::after { content:''; flex:1; height:1px; background:linear-gradient(to left,transparent,#c8941a 60%); }
+        .cat-grid { display:grid; grid-template-columns:1fr 1fr; gap:13px; padding:0 14px 6px; }
+        .cat-card { background:#fff; border-radius:16px; overflow:hidden; box-shadow:0 3px 18px rgba(0,0,0,0.09); position:relative; transition:transform .2s,box-shadow .2s; }
+        .cat-card:active { transform:scale(0.97); }
+        .cat-card.unavail { opacity:.45; pointer-events:none; }
+        .cat-img-wrap { position:relative; width:100%; aspect-ratio:1; overflow:hidden; background:linear-gradient(135deg,#e8f0e8,#d0e4d0); }
+        .cat-img-wrap img { width:100%; height:100%; object-fit:cover; display:block; }
+        .cat-img-ph { width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:46px; }
+        .cat-edit-overlay { display:none; position:absolute; inset:0; background:rgba(26,51,48,0.82); flex-direction:column; align-items:center; justify-content:center; gap:7px; padding:12px; }
+        .cat-edit-overlay button { width:100%; background:rgba(255,255,255,0.92); border:none; border-radius:8px; padding:7px 10px; font-family:'Heebo',sans-serif; font-size:11px; font-weight:700; color:#1a3330; cursor:pointer; }
+        .cat-edit-overlay button.red-btn { background:rgba(255,80,80,0.15); color:#c00; }
+        .cat-price-badge { position:absolute; bottom:8px; right:8px; background:rgba(26,51,48,0.85); color:#e6b740; border-radius:50px; padding:4px 12px; font-family:'Playfair Display',serif; font-size:14px; font-weight:700; backdrop-filter:blur(4px); }
+        .cat-card-body { padding:11px 11px 10px; }
+        .cat-card-name { font-family:'Playfair Display',serif; font-size:13px; font-weight:600; color:#1a1a1a; line-height:1.35; margin-bottom:4px; min-height:36px; }
+        .cat-card-desc { font-size:11px; color:#999; margin-bottom:8px; line-height:1.4; }
+        .cat-add-btn { width:100%; background:#1a3330; color:#fff; border:none; border-radius:9px; padding:9px 0; font-family:'Heebo',sans-serif; font-size:13px; font-weight:700; cursor:pointer; transition:.2s; }
+        .cat-add-btn.in-cart { background:#c8941a; }
+        .cat-add-new { background:transparent; border:2px dashed #c8941a; border-radius:16px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; padding:20px 10px; cursor:pointer; color:#c8941a; font-family:'Heebo',sans-serif; font-size:13px; font-weight:700; min-height:220px; }
+        .cat-cart-fab { display:none; position:fixed; bottom:22px; left:50%; transform:translateX(-50%); background:#1a3330; color:#fff; border:none; border-radius:50px; padding:14px 30px; font-family:'Heebo',sans-serif; font-size:15px; font-weight:900; cursor:pointer; align-items:center; gap:12px; box-shadow:0 4px 28px rgba(26,51,48,0.45); z-index:500; white-space:nowrap; }
+        .cat-cart-badge { background:#c8941a; color:#fff; border-radius:50%; width:26px; height:26px; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:900; flex-shrink:0; }
+        .cat-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:5100; }
+        .cat-overlay.open { display:block; }
+        .cat-sheet { position:fixed; bottom:0; left:0; right:0; background:#fff; border-radius:22px 22px 0 0; max-height:90vh; overflow-y:auto; z-index:5101; transform:translateY(100%); transition:transform .3s cubic-bezier(.32,.72,0,1); max-width:640px; margin:0 auto; }
+        .cat-sheet.open { transform:translateY(0); }
+        .cat-sheet-hdr { background:#1a3330; padding:18px 22px; display:flex; align-items:center; justify-content:space-between; border-radius:22px 22px 0 0; }
+        .cat-sheet-hdr h3 { color:#fff; margin:0; font-family:'Playfair Display',serif; font-size:17px; }
+        .cat-sheet-close { background:none; border:none; color:rgba(255,255,255,0.7); font-size:24px; cursor:pointer; line-height:1; padding:0; }
+        .cat-sheet-body { padding:20px; }
+        .cat-cart-row { display:flex; align-items:center; gap:12px; padding:13px 0; border-bottom:1px solid #f0ece4; }
+        .cat-cart-info { flex:1; }
+        .cat-cart-name { font-weight:700; font-size:13px; color:#1a1a1a; line-height:1.3; }
+        .cat-cart-opt { font-size:11px; color:#aaa; margin-top:2px; }
+        .cat-cart-price { font-family:'Playfair Display',serif; font-size:14px; font-weight:700; color:#c8941a; margin-top:4px; }
+        .qty-ctrl { display:flex; align-items:center; gap:8px; }
+        .qty-btn { width:30px; height:30px; border-radius:50%; border:1.5px solid #1a3330; background:#fff; color:#1a3330; font-size:17px; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; line-height:1; }
+        .qty-val { font-weight:900; min-width:20px; text-align:center; font-size:15px; }
+        .cat-checkout-field { margin-bottom:14px; }
+        .cat-checkout-field label { display:block; font-size:12px; font-weight:700; color:#555; margin-bottom:5px; }
+        .cat-checkout-field input,.cat-checkout-field textarea { width:100%; padding:11px 14px; border:1.5px solid #ddd; border-radius:10px; font-family:'Heebo',sans-serif; font-size:14px; box-sizing:border-box; outline:none; transition:.2s; }
+        .cat-checkout-field input:focus,.cat-checkout-field textarea:focus { border-color:#1a3330; }
+        .cat-submit-btn { width:100%; background:linear-gradient(135deg,#1a3330,#2a5040); color:#fff; border:none; border-radius:12px; padding:16px; font-family:'Heebo',sans-serif; font-size:16px; font-weight:900; cursor:pointer; margin-top:6px; display:flex; align-items:center; justify-content:center; gap:10px; }
+        .cat-submit-btn::before { content:'📲'; font-size:18px; }
+        .cat-opt-btn { width:100%; background:#fff; border:2px solid #e0e0e0; border-radius:11px; padding:13px 16px; font-family:'Heebo',sans-serif; font-size:14px; font-weight:700; cursor:pointer; margin-bottom:8px; text-align:right; transition:.2s; color:#1a1a1a; }
+        .cat-opt-btn:hover { border-color:#1a3330; background:#f0f4f0; }
+        .cat-success-banner { display:none; position:fixed; top:80px; left:50%; transform:translateX(-50%); background:#1a3330; color:#e6b740; padding:14px 28px; border-radius:50px; font-weight:900; font-size:15px; z-index:6000; box-shadow:0 4px 20px rgba(0,0,0,0.3); white-space:nowrap; }
     </style>
 </head>
 <body>
@@ -315,6 +375,7 @@
     <button class="nav-btn" onclick="switchMainTab('saved-tab', this)">📋 הזמנות שמורות</button>
     <button class="nav-btn" onclick="switchMainTab('bank-tab', this)">🏦 בנק חומרי גלם</button>
     <button class="nav-btn" onclick="switchMainTab('recipes-tab', this)">📖 מתכוני מוצרים</button>
+    <button class="nav-btn" onclick="switchMainTab('catalog-tab', this); renderCatalog();" style="background:linear-gradient(135deg,#1a3330,#2a5040);color:#e6b740;font-family:'Heebo',sans-serif;">✨ קטלוג ללקוח</button>
 </div>
 
 <div id="order-tab" class="container active">
@@ -421,6 +482,136 @@
     <div class="mgmt-layout" id="mgmt-layout">
         <div class="sidebar" id="sidebar-menu-list" style="width:100%; max-width:100%;"></div>
         <div id="product-editor-area" style="display:none; flex:1; background:white; border-radius:var(--radius); padding:25px; box-shadow:var(--shadow);"></div>
+    </div>
+</div>
+
+<!-- ===== טאב קטלוג לקוחות ===== -->
+<div id="catalog-tab" class="container">
+
+    <!-- כותרת יוקרה -->
+    <div class="cat-hero">
+        <img src="libis-logo.png" class="cat-hero-logo" onerror="this.style.display='none'">
+        <h1 class="cat-hero-title">ליביס קייטרינג</h1>
+        <p class="cat-hero-sub">קייטרינג כשר פרימיום לכל אירוע</p>
+        <button class="cat-hero-edit" onclick="toggleCatalogEdit()">✏️ עריכה</button>
+    </div>
+
+    <!-- פס מנהל -->
+    <div class="cat-admin-banner" id="cat-admin-banner">
+        <span>✏️ מצב עריכה פעיל — לחץ על מוצר לעריכה</span>
+        <button onclick="toggleCatalogEdit()" style="background:#1a3330;color:#e6b740;border:none;border-radius:50px;padding:5px 14px;font-family:'Heebo',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">👁 תצוגת לקוח</button>
+    </div>
+
+    <!-- פילטר קטגוריות -->
+    <div class="cat-filters" id="cat-filter-pills"></div>
+
+    <!-- גריד מוצרים -->
+    <div id="catalog-grid-container"></div>
+
+    <!-- הודעת הצלחה -->
+    <div class="cat-success-banner" id="cat-success-banner">🎉 ההזמנה נשלחה בהצלחה!</div>
+
+    <!-- input נסתר להעלאת תמונות -->
+    <input type="file" id="cat-img-input" accept="image/*" style="display:none;">
+</div>
+
+<!-- FAB עגלה -->
+<button class="cat-cart-fab" id="cat-cart-fab" onclick="openCartSheet()">
+    🛒 לעגלה — <span id="cat-cart-total">₪0</span>
+    <div class="cat-cart-badge" id="cat-cart-badge">0</div>
+</button>
+
+<!-- ===== מודל בחירת אפשרות ===== -->
+<div class="cat-overlay" id="cat-opt-overlay" onclick="closeOptSheet()"></div>
+<div class="cat-sheet" id="cat-opt-sheet">
+    <div class="cat-sheet-hdr">
+        <h3 id="cat-opt-title">בחר מילוי</h3>
+        <button class="cat-sheet-close" onclick="closeOptSheet()">×</button>
+    </div>
+    <div class="cat-sheet-body" id="cat-opt-list"></div>
+</div>
+
+<!-- ===== מודל עגלה ===== -->
+<div class="cat-overlay" id="cat-cart-overlay" onclick="closeCartSheet()"></div>
+<div class="cat-sheet" id="cat-cart-sheet">
+    <div class="cat-sheet-hdr">
+        <h3>🛒 העגלה שלך</h3>
+        <button class="cat-sheet-close" onclick="closeCartSheet()">×</button>
+    </div>
+    <div class="cat-sheet-body">
+        <div id="cat-cart-list"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-top:2px solid #f0ece4;margin-top:8px;">
+            <span style="font-weight:900;font-size:16px;color:#1a1a1a;">סה"כ</span>
+            <span style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:#c8941a;" id="cat-cart-grand">₪0</span>
+        </div>
+        <button class="cat-submit-btn" style="background:linear-gradient(135deg,#c8941a,#e6b740);" onclick="openCheckoutSheet()">
+            להמשך ההזמנה ←
+        </button>
+    </div>
+</div>
+
+<!-- ===== מודל טופס הזמנה ===== -->
+<div class="cat-overlay" id="cat-co-overlay" onclick="closeCheckoutSheet()"></div>
+<div class="cat-sheet" id="cat-co-sheet">
+    <div class="cat-sheet-hdr">
+        <h3>📋 פרטי ההזמנה</h3>
+        <button class="cat-sheet-close" onclick="closeCheckoutSheet()">×</button>
+    </div>
+    <div class="cat-sheet-body">
+        <div class="cat-checkout-field">
+            <label>שם מלא *</label>
+            <input id="co-name" type="text" placeholder="ישראל ישראלי">
+        </div>
+        <div class="cat-checkout-field">
+            <label>טלפון *</label>
+            <input id="co-phone" type="tel" placeholder="050-0000000">
+        </div>
+        <div class="cat-checkout-field">
+            <label>תאריך האירוע</label>
+            <input id="co-date" type="date">
+        </div>
+        <div class="cat-checkout-field">
+            <label>מיקום / כתובת</label>
+            <input id="co-location" type="text" placeholder="רחוב, עיר">
+        </div>
+        <div class="cat-checkout-field">
+            <label>מספר סועדים משוער</label>
+            <input id="co-guests" type="number" placeholder="50" min="1">
+        </div>
+        <div class="cat-checkout-field">
+            <label>הערות נוספות</label>
+            <textarea id="co-notes" rows="3" placeholder="בקשות מיוחדות, אלרגיות..."></textarea>
+        </div>
+        <button class="cat-submit-btn" onclick="submitCatalogOrder()">שלח הזמנה בוואטסאפ</button>
+        <p style="text-align:center;font-size:11px;color:#aaa;margin-top:12px;">ההזמנה תישלח למנהל ואליך בוואטסאפ</p>
+    </div>
+</div>
+
+<!-- ===== מודל עריכת מוצר (מנהל) ===== -->
+<div class="cat-overlay" id="cat-pe-overlay" onclick="closeProdEdit()"></div>
+<div class="cat-sheet" id="cat-pe-sheet">
+    <div class="cat-sheet-hdr">
+        <h3>✏️ עריכת מוצר</h3>
+        <button class="cat-sheet-close" onclick="closeProdEdit()">×</button>
+    </div>
+    <div class="cat-sheet-body">
+        <div class="cat-checkout-field">
+            <label>שם המוצר</label>
+            <input id="cpe-name" type="text">
+        </div>
+        <div class="cat-checkout-field">
+            <label>מחיר (₪)</label>
+            <input id="cpe-price" type="number" min="0">
+        </div>
+        <div class="cat-checkout-field">
+            <label>תיאור קצר (אופציונלי)</label>
+            <textarea id="cpe-desc" rows="2" placeholder="תיאור מפתה..."></textarea>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+            <input type="checkbox" id="cpe-avail" style="width:20px;height:20px;cursor:pointer;">
+            <label for="cpe-avail" style="font-size:14px;font-weight:700;cursor:pointer;">זמין להזמנה</label>
+        </div>
+        <button class="cat-submit-btn" onclick="saveProdEdit()">💾 שמור שינויים</button>
     </div>
 </div>
 
@@ -2127,6 +2318,284 @@
             }
         });
     };
+
+    // ===== קטלוג לקוחות – יוקרה =====
+    const MANAGER_WA = '972587703135';
+    let _catEdit = false;
+    let _catFilter = null;
+    let _cart = [];
+    let _pendingItem = null;
+
+    function toggleCatalogEdit() {
+        _catEdit = !_catEdit;
+        document.getElementById('cat-admin-banner').style.display = _catEdit ? 'flex' : 'none';
+        const editBtn = document.querySelector('.cat-hero-edit');
+        if (editBtn) editBtn.textContent = _catEdit ? '👁 לקוח' : '✏️ עריכה';
+        renderCatalog();
+    }
+
+    function setCatFilter(f) { _catFilter = f; renderCatalog(); }
+
+    function renderCatalog() {
+        const menu = state.menu || [];
+
+        // פילטר קטגוריות
+        const pills = document.getElementById('cat-filter-pills');
+        if (!pills) return;
+        pills.innerHTML = `<button class="cat-pill${!_catFilter?' active':''}" onclick="setCatFilter(null)">הכל</button>` +
+            menu.map(c => `<button class="cat-pill${_catFilter===c.cat?' active':''}" onclick="setCatFilter('${c.cat.replace(/'/g,"\\'")}')">${c.cat}</button>`).join('');
+
+        // גריד
+        const grid = document.getElementById('catalog-grid-container');
+        let html = '';
+        for (const cat of menu) {
+            if (_catFilter && _catFilter !== cat.cat) continue;
+            const visible = cat.items.filter(i => _catEdit || !i.catHidden);
+            if (!visible.length && !_catEdit) continue;
+            const ci = menu.indexOf(cat);
+            html += `<div class="cat-section-hdr">${cat.cat}</div><div class="cat-grid">`;
+            for (const item of visible) {
+                html += buildCatCard(item, ci, cat.items.indexOf(item));
+            }
+            if (_catEdit) html += `<div class="cat-add-new" onclick="addCatProduct(${ci})"><span style="font-size:36px;line-height:1;">+</span><span>הוסף מוצר</span></div>`;
+            html += '</div>';
+        }
+        grid.innerHTML = html;
+        updateFab();
+    }
+
+    function buildCatCard(item, ci, ii) {
+        const inCart = _cart.filter(c => c.baseId === item.id).reduce((s,c)=>s+c.qty,0);
+        const img = item.image
+            ? `<img src="${item.image}" onerror="this.parentElement.innerHTML='<div class=\\'cat-img-ph\\'>🍽️</div>'">`
+            : `<div class="cat-img-ph">${catEmoji(item.name)}</div>`;
+        const editOv = _catEdit ? `<div class="cat-edit-overlay" style="display:flex;">
+            <button onclick="triggerImgUpload(${ci},${ii},event)">📷 שנה תמונה</button>
+            <button onclick="openProdEdit(${ci},${ii},event)">✏️ ערוך פרטים</button>
+            <button class="red-btn" onclick="toggleCatHide(${ci},${ii},event)">${item.catHidden?'👁 הצג':'🚫 הסתר'}</button>
+        </div>` : '';
+        return `<div class="cat-card${item.catHidden?' unavail':''}">
+            <div class="cat-img-wrap">${img}${editOv}
+                <div class="cat-price-badge">₪${item.price}</div>
+            </div>
+            <div class="cat-card-body">
+                <div class="cat-card-name">${item.name}</div>
+                ${item.catDesc?`<div class="cat-card-desc">${item.catDesc}</div>`:''}
+                <button class="cat-add-btn${inCart?' in-cart':''}" onclick="handleAdd(${ci},${ii},event)">
+                    ${inCart ? `✓ בסל (${inCart})` : '+ הוסף לסל'}
+                </button>
+            </div>
+        </div>`;
+    }
+
+    function catEmoji(n) {
+        if (/פסטה|בטטה|מוקרם/i.test(n)) return '🍝';
+        if (/סלמון|דג|סלומון|מושט/i.test(n)) return '🐟';
+        if (/קורסון|קוראסון/i.test(n)) return '🥐';
+        if (/כריכ/i.test(n)) return '🥪';
+        if (/סלט/i.test(n)) return '🥗';
+        if (/קיש|פשטיד/i.test(n)) return '🥧';
+        if (/פוקצ/i.test(n)) return '🫓';
+        if (/מוס|פחזנ|סופל|כוסית/i.test(n)) return '🍮';
+        if (/שיפוד/i.test(n)) return '🍡';
+        return '🍽️';
+    }
+
+    function handleAdd(ci, ii, e) {
+        e && e.stopPropagation();
+        if (_catEdit) return;
+        const item = state.menu[ci].items[ii];
+        if (item.options && item.options.length) {
+            _pendingItem = {ci, ii};
+            document.getElementById('cat-opt-title').textContent = item.name;
+            document.getElementById('cat-opt-list').innerHTML = item.options.map(o =>
+                `<button class="cat-opt-btn" onclick="pickOpt('${o.replace(/'/g,"\\'")}')">${o}</button>`
+            ).join('');
+            openSheet('cat-opt');
+        } else {
+            addToCart(item.id, item.name, null, item.price);
+        }
+    }
+
+    function pickOpt(opt) {
+        if (!_pendingItem) return;
+        const {ci, ii} = _pendingItem;
+        const item = state.menu[ci].items[ii];
+        addToCart(item.id + '_' + opt, item.name + ' — ' + opt, opt, item.price);
+        closeSheet('cat-opt');
+        _pendingItem = null;
+    }
+
+    function addToCart(id, name, opt, price) {
+        const ex = _cart.find(c => c.id === id);
+        if (ex) { ex.qty++; }
+        else { _cart.push({id, baseId: id.split('_')[0]|0 || id, name, opt, qty:1, price}); }
+        updateFab();
+        renderCatalog();
+    }
+
+    function changeQty(idx, d) {
+        _cart[idx].qty += d;
+        if (_cart[idx].qty <= 0) _cart.splice(idx, 1);
+        updateFab();
+        renderCartSheet();
+        renderCatalog();
+    }
+
+    function updateFab() {
+        const fab = document.getElementById('cat-cart-fab');
+        if (!fab) return;
+        const total = _cart.reduce((s,c)=>s+c.qty,0);
+        const sum   = _cart.reduce((s,c)=>s+c.qty*c.price,0);
+        fab.style.display = total ? 'flex' : 'none';
+        document.getElementById('cat-cart-badge').textContent = total;
+        document.getElementById('cat-cart-total').textContent = '₪'+sum;
+    }
+
+    function openCartSheet() {
+        renderCartSheet();
+        openSheet('cat-cart');
+    }
+
+    function renderCartSheet() {
+        const list = document.getElementById('cat-cart-list');
+        if (!_cart.length) { list.innerHTML = '<div style="text-align:center;padding:40px;color:#bbb;font-size:15px;">העגלה ריקה</div>'; }
+        else list.innerHTML = _cart.map((c,i) => `
+            <div class="cat-cart-row">
+                <div class="cat-cart-info">
+                    <div class="cat-cart-name">${c.name}</div>
+                    ${c.opt?`<div class="cat-cart-opt">${c.opt}</div>`:''}
+                    <div class="cat-cart-price">₪${c.qty*c.price}</div>
+                </div>
+                <div class="qty-ctrl">
+                    <button class="qty-btn" onclick="changeQty(${i},-1)">−</button>
+                    <span class="qty-val">${c.qty}</span>
+                    <button class="qty-btn" onclick="changeQty(${i},1)">+</button>
+                </div>
+            </div>`).join('');
+        const sum = _cart.reduce((s,c)=>s+c.qty*c.price,0);
+        document.getElementById('cat-cart-grand').textContent = '₪'+sum;
+    }
+
+    function openCheckoutSheet() {
+        closeSheet('cat-cart');
+        setTimeout(()=>openSheet('cat-co'), 320);
+    }
+
+    function submitCatalogOrder() {
+        const name  = document.getElementById('co-name').value.trim();
+        const phone = document.getElementById('co-phone').value.trim();
+        const date  = document.getElementById('co-date').value;
+        const loc   = document.getElementById('co-location').value.trim();
+        const guests= document.getElementById('co-guests').value.trim();
+        const notes = document.getElementById('co-notes').value.trim();
+        if (!name || !phone) { alert('נא למלא שם וטלפון'); return; }
+
+        const sum = _cart.reduce((s,c)=>s+c.qty*c.price,0);
+        const lines = _cart.map(c=>`• ${c.qty}× ${c.name} — ₪${c.qty*c.price}`).join('\n');
+
+        const mgr = `🍽️ *הזמנה חדשה – ליביס קייטרינג*\n\n👤 *שם:* ${name}\n📱 *טלפון:* ${phone}\n📅 *תאריך:* ${date||'לא צוין'}\n📍 *מיקום:* ${loc||'לא צוין'}\n👥 *סועדים:* ${guests||'לא צוין'}\n\n🛒 *פריטים:*\n${lines}\n\n💰 *סה"כ: ₪${sum}*\n\n📝 *הערות:* ${notes||'אין'}`;
+        const cust = `🍽️ *ליביס קייטרינג – אישור הזמנה*\n\nשלום ${name}! 🎉\nהזמנתך התקבלה.\n\n🛒 *הזמנתך:*\n${lines}\n\n💰 *סה"כ: ₪${sum}*\n📅 *תאריך:* ${date||'לא צוין'}\n\nניצור איתך קשר לאישור. תודה! ✨`;
+
+        window.open('https://wa.me/'+MANAGER_WA+'?text='+encodeURIComponent(mgr),'_blank');
+        setTimeout(()=>{
+            const cp = phone.replace(/\D/g,'').replace(/^0/,'972');
+            window.open('https://wa.me/'+cp+'?text='+encodeURIComponent(cust),'_blank');
+        },1200);
+
+        _cart = [];
+        updateFab();
+        renderCatalog();
+        closeSheet('cat-co');
+        document.getElementById('co-name').value='';
+        document.getElementById('co-phone').value='';
+        document.getElementById('co-date').value='';
+        document.getElementById('co-location').value='';
+        document.getElementById('co-guests').value='';
+        document.getElementById('co-notes').value='';
+        const banner = document.getElementById('cat-success-banner');
+        banner.style.display='block';
+        setTimeout(()=>banner.style.display='none', 5000);
+    }
+
+    // ===== Admin – image =====
+    function triggerImgUpload(ci, ii, e) {
+        e && e.stopPropagation();
+        const inp = document.getElementById('cat-img-input');
+        inp.onchange = function() {
+            const file = inp.files[0]; if (!file) return;
+            const reader = new FileReader();
+            reader.onload = ev => {
+                const img = new Image();
+                img.onload = () => {
+                    const MAX=600; let w=img.width,h=img.height;
+                    if (w>MAX||h>MAX){if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;}}
+                    const c=document.createElement('canvas'); c.width=w; c.height=h;
+                    c.getContext('2d').drawImage(img,0,0,w,h);
+                    state.menu[ci].items[ii].image = c.toDataURL('image/jpeg',0.6);
+                    save(); renderCatalog();
+                };
+                img.src = ev.target.result;
+            };
+            reader.readAsDataURL(file);
+        };
+        inp.value=''; inp.click();
+    }
+
+    // ===== Admin – edit product =====
+    let _peTarget = null;
+    function openProdEdit(ci, ii, e) {
+        e && e.stopPropagation();
+        _peTarget = {ci, ii};
+        const item = state.menu[ci].items[ii];
+        document.getElementById('cpe-name').value  = item.name;
+        document.getElementById('cpe-price').value = item.price;
+        document.getElementById('cpe-desc').value  = item.catDesc||'';
+        document.getElementById('cpe-avail').checked = item.catHidden !== true;
+        openSheet('cat-pe');
+    }
+    function saveProdEdit() {
+        if (!_peTarget) return;
+        const {ci, ii} = _peTarget;
+        const item = state.menu[ci].items[ii];
+        item.name     = document.getElementById('cpe-name').value.trim()||item.name;
+        item.price    = parseFloat(document.getElementById('cpe-price').value)||item.price;
+        item.catDesc  = document.getElementById('cpe-desc').value.trim();
+        item.catHidden= !document.getElementById('cpe-avail').checked;
+        save(); closeProdEdit(); renderCatalog();
+    }
+    function closeProdEdit() { closeSheet('cat-pe'); }
+
+    function toggleCatHide(ci, ii, e) {
+        e && e.stopPropagation();
+        const item = state.menu[ci].items[ii];
+        item.catHidden = !item.catHidden;
+        save(); renderCatalog();
+    }
+
+    function addCatProduct(ci) {
+        const name = prompt('שם המוצר:'); if (!name) return;
+        const price = parseFloat(prompt('מחיר (₪):')) || 0;
+        state.menu[ci].items.push({id: Date.now(), name, price, recipe:[], catDesc:''});
+        save(); renderCatalog();
+    }
+
+    // ===== sheet helpers =====
+    function openSheet(id) {
+        document.getElementById(id+'-overlay').classList.add('open');
+        const s = document.getElementById(id+'-sheet');
+        s.style.display='block';
+        setTimeout(()=>s.classList.add('open'),10);
+    }
+    function closeSheet(id) {
+        document.getElementById(id+'-overlay').classList.remove('open');
+        const s = document.getElementById(id+'-sheet');
+        s.classList.remove('open');
+        setTimeout(()=>s.style.display='none',300);
+    }
+    function closeOptSheet()      { closeSheet('cat-opt'); }
+    function closeCartSheet()     { closeSheet('cat-cart'); }
+    function closeCheckoutSheet() { closeSheet('cat-co'); }
 </script>
 </div><!-- /app-content -->
 </body>
