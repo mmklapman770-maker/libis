@@ -31,6 +31,11 @@
     --radius: 2px;
     --panel-dark-bg:#2B241C;
     --panel-dark-text:#F5EEDF;
+    --fixed-card:#FFFFFF;
+    --fixed-card-soft:#FDFBF6;
+    --fixed-line: rgba(168,118,58,0.28);
+    --fixed-gold:#A8763A;
+    --fixed-gold-pale:#EFE1C0;
   }
   @media (prefers-color-scheme: dark){
     :root{
@@ -165,119 +170,88 @@
     .reveal{ opacity:1; transform:none; transition:none; }
   }
 
-  /* ---------- OPENING PHOTO ---------- */
-  .room{
-    position:relative;
-    background:var(--paper);
-    padding:clamp(28px, 5vw, 52px) clamp(16px, 4vw, 40px) 0;
+  /* ---------- HERO (photo background) ---------- */
+  .hero{
+    min-height:92vh;
     display:flex;
+    align-items:center;
     justify-content:center;
-  }
-  .room-frame{
+    padding:60px 28px;
     position:relative;
-    width:100%;
-    max-width:1180px;
-    aspect-ratio:3/2;
     overflow:hidden;
-    border:1px solid var(--gold);
-    box-shadow:var(--shadow);
   }
-  .room-frame::after{
-    content:"";
+  .hero-bg{
     position:absolute;
-    inset:9px;
-    border:1px solid rgba(255,255,255,0.55);
-    pointer-events:none;
-  }
-  .room-frame img{
+    inset:0;
     width:100%; height:100%;
     object-fit:cover;
-    display:block;
-    filter:saturate(1.04) contrast(1.02);
+    z-index:0;
   }
-
-  /* ---------- HERO ---------- */
-  .hero{
-    min-height:78vh;
-    display:flex;
-    align-items:center;
-    padding:52px 28px 60px;
-    position:relative;
-    overflow:hidden;
-  }
-  .hero-arch-bg{
+  .hero-scrim{
     position:absolute;
-    left:50%; bottom:-8%;
-    width:min(920px, 130vw);
-    height:min(600px, 82vw);
-    transform:translateX(-50%);
-    border:1px solid var(--gold);
-    border-bottom:none;
-    border-radius:50% 50% 0 0/100% 100% 0 0;
-    opacity:.09;
-    pointer-events:none;
+    inset:0;
+    z-index:1;
+    background:linear-gradient(190deg, rgba(23,19,14,.46) 0%, rgba(23,19,14,.52) 40%, rgba(23,19,14,.76) 100%);
   }
-  .hero-arch-bg::before{
-    content:"";
-    position:absolute;
-    inset:34px;
-    border:1px solid var(--gold);
-    border-bottom:none;
-    border-radius:50% 50% 0 0/100% 100% 0 0;
-  }
-  .hero-inner{
+  .hero-copy{
     position:relative;
-    display:grid;
-    grid-template-columns:1.15fr auto;
-    align-items:center;
-    gap:64px;
-    width:100%;
-    min-width:0;
+    z-index:2;
+    text-align:center;
+    max-width:700px;
   }
-  .hero-copy{ text-align:right; min-width:0; }
-  .hero-visual{ min-width:0; }
   .hero-emblem{
     width:64px; height:64px;
-    margin-bottom:34px;
+    margin:0 auto 34px;
     position:relative;
   }
   .hero-emblem svg{ width:100%; height:100%; }
+  .hero .eyebrow{ justify-content:center; color:var(--gold-bright); }
+  .hero .eyebrow::before{ background:var(--gold-bright); }
   .hero h1{
     font-size:clamp(2.5rem, 5.2vw, 4.1rem);
     line-height:1.2;
     letter-spacing:-0.01em;
+    color:var(--panel-dark-text);
   }
   .hero h1 em{ font-style:normal; }
   .hero .lede{
-    margin-top:26px;
+    margin:26px auto 0;
     max-width:520px;
     font-size:1.14rem;
-    color:var(--ink-soft);
+    color:rgba(245,238,223,.86);
     font-weight:300;
   }
   .hero .cta-row{
     margin-top:44px;
     display:flex;
     flex-direction:column;
-    align-items:flex-start;
+    align-items:center;
     gap:14px;
   }
   .hero .price-note{
     font-size:.85rem;
-    color:var(--ink-soft);
+    color:rgba(245,238,223,.78);
     letter-spacing:.02em;
   }
-  .hero .price-note b{ color:var(--gold); font-weight:700; }
+  .hero .price-note b{ color:var(--gold-bright); font-weight:700; }
 
-  .hero-visual{ display:flex; justify-content:center; }
+  .scroll-cue{
+    position:absolute;
+    bottom:36px; left:50%;
+    transform:translateX(-50%);
+    width:1px; height:52px;
+    background:linear-gradient(to bottom, transparent, var(--gold-bright));
+    opacity:.7;
+    z-index:2;
+  }
 
   /* book mockup */
   .book{
     position:relative;
     width:clamp(180px, 20vw, 236px);
     aspect-ratio:3/4.3;
-    background:linear-gradient(180deg, var(--paper-soft), var(--paper));
-    border:1px solid var(--line);
+    background:linear-gradient(180deg, var(--fixed-card-soft), var(--fixed-card));
+    border:1px solid var(--fixed-line);
     box-shadow:var(--shadow);
     display:flex;
     flex-direction:column;
@@ -291,7 +265,7 @@
     position:absolute;
     left:50%;
     bottom:0;
-    border:1.4px solid var(--gold);
+    border:1.4px solid var(--fixed-gold);
     border-bottom:none;
     border-radius:999px 999px 0 0;
     transform:translateX(-50%);
@@ -301,7 +275,7 @@
   .book-arch span:nth-child(3){ width:48%; height:48%; opacity:.55; }
   .book-arch.arch-bottom{ transform:rotate(180deg); }
   .book-mid{ display:flex; align-items:center; gap:7px; }
-  .book-dot{ width:7px; height:7px; border-radius:50%; background:var(--gold); flex:none; }
+  .book-dot{ width:7px; height:7px; border-radius:50%; background:var(--fixed-gold); flex:none; }
   .leaf{
     width:13px; height:8px;
     background:var(--gold-pale);
@@ -311,10 +285,11 @@
   }
   .leaf.left{ transform:rotate(-40deg); }
   .leaf.right{ transform:rotate(40deg) scaleX(-1); }
+  .book .leaf{ background:var(--fixed-gold-pale); border-color:var(--fixed-gold); }
   .book-title{
     font-family:'Frank Ruhl', serif;
     font-size:1.2rem;
-    color:var(--ink);
+    color:var(--panel-dark-bg);
     text-align:center;
     line-height:1.32;
   }
@@ -324,8 +299,8 @@
     width:30%;
     aspect-ratio:1;
     border-radius:50%;
-    background:var(--gold);
-    color:var(--paper-soft);
+    background:var(--fixed-gold);
+    color:var(--panel-dark-text);
     display:flex;
     align-items:center;
     justify-content:center;
@@ -335,16 +310,6 @@
     line-height:1.35;
     transform:rotate(10deg);
     box-shadow:var(--shadow);
-  }
-
-  .scroll-cue{
-    position:absolute;
-    bottom:36px; left:50%;
-    transform:translateX(-50%);
-    width:1px; height:52px;
-    background:linear-gradient(to bottom, transparent, var(--gold));
-    opacity:.6;
-    z-index:1;
   }
 
   /* buttons */
@@ -524,6 +489,16 @@
     opacity:.14;
     pointer-events:none;
   }
+  .final-grid{
+    position:relative;
+    display:grid;
+    grid-template-columns:1fr auto;
+    align-items:center;
+    gap:56px;
+    min-width:0;
+  }
+  .final-copy{ text-align:right; min-width:0; }
+  .final-visual{ display:flex; justify-content:center; min-width:0; }
   .final .price{
     font-family:'Frank Ruhl', serif;
     font-size:clamp(3.2rem,9vw,5.2rem);
@@ -543,11 +518,11 @@
   .final h2{ margin-top:18px; font-size:clamp(1.7rem,3.4vw,2.3rem); }
   .final p.body2{
     max-width:480px;
-    margin:22px auto 0;
+    margin:22px 0 0;
     opacity:.82;
     font-size:1rem;
   }
-  .final .cta-row{ margin-top:40px; display:flex; justify-content:center; }
+  .final .cta-row{ margin-top:40px; display:flex; justify-content:flex-start; }
 
   /* ---------- FOOTER ---------- */
   footer{
@@ -592,11 +567,11 @@
   .float-wa svg{ width:26px; height:26px; }
 
   @media (max-width: 900px){
-    .hero-inner{ grid-template-columns:1fr; text-align:center; gap:44px; }
-    .hero-copy{ text-align:center; }
-    .hero-copy .eyebrow{ justify-content:center; }
-    .hero .cta-row{ align-items:center; }
-    .hero-visual{ order:2; }
+    .final-grid{ grid-template-columns:1fr; text-align:center; gap:40px; }
+    .final-copy{ text-align:center; }
+    .final .cta-row{ justify-content:center; }
+    .final p.body2{ margin:22px auto 0; }
+    .final-visual{ order:-1; }
   }
 
   @media (max-width: 720px){
@@ -619,51 +594,30 @@
 
 <main>
 
-  <!-- OPENING PHOTO -->
-  <section class="room">
-    <div class="room-frame">
-      <img src="room.webp" alt="פינת ישיבה נעימה עם נוף לגבעות ירוקות" loading="eager"/>
-    </div>
-  </section>
-
-  <!-- HERO -->
+  <!-- HERO (photo background) -->
   <section class="hero">
-    <div class="hero-arch-bg" aria-hidden="true"></div>
-    <div class="wrap hero-inner">
-      <div class="hero-copy">
-        <div class="hero-emblem" aria-hidden="true">
-          <svg viewBox="0 0 64 64">
-            <circle cx="24" cy="34" r="15" fill="none" stroke="var(--gold)" stroke-width="1.4"/>
-            <circle cx="40" cy="34" r="15" fill="none" stroke="var(--gold)" stroke-width="1.4"/>
-            <path d="M32 10 L34.5 15.5 L40.5 16.2 L36 20.4 L37.2 26.3 L32 23.3 L26.8 26.3 L28 20.4 L23.5 16.2 L29.5 15.5 Z" fill="var(--gold)"/>
-          </svg>
-        </div>
-        <p class="eyebrow">מדריכת כלות מוסמכת · באישור רבנים</p>
-        <h1>את לא צריכה <em class="gold-text">לעשות את זה לבד</em></h1>
-        <p class="lede">
-          מתחתנת בקרוב, והראש מתפוצץ מרשימות, סידורים ותאריכים? התקופה הזו אמורה להיות המרגשת בחייך —
-          וזה בדיוק מה שחוברת כלה נועדה לתת לך: מפה ברורה, מרגיעה ומסודרת, מרגע סגירת השידוך ועד השבע ברכות.
-        </p>
-        <div class="cta-row">
-          <a class="btn wa-cta" data-msg="היי מושקי, אשמח לקבל פרטים נוספים ולהזמין את חוברת הכלה" target="_blank" rel="noopener">
-            <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 0-8.6 15L2 22l5.2-1.4A10 10 0 1 0 12 2Z" stroke="currentColor" stroke-width="1.4" fill="none"/></svg>
-            להזמנת חוברת הכלה בוואטסאפ
-          </a>
-          <p class="price-note">מחיר השקה מיוחד — <b>18 ₪</b> בלבד</p>
-        </div>
+    <img class="hero-bg" src="room.webp" alt="" aria-hidden="true" loading="eager"/>
+    <div class="hero-scrim" aria-hidden="true"></div>
+    <div class="wrap hero-copy">
+      <div class="hero-emblem" aria-hidden="true">
+        <svg viewBox="0 0 64 64">
+          <circle cx="24" cy="34" r="15" fill="none" stroke="var(--gold-bright)" stroke-width="1.4"/>
+          <circle cx="40" cy="34" r="15" fill="none" stroke="var(--gold-bright)" stroke-width="1.4"/>
+          <path d="M32 10 L34.5 15.5 L40.5 16.2 L36 20.4 L37.2 26.3 L32 23.3 L26.8 26.3 L28 20.4 L23.5 16.2 L29.5 15.5 Z" fill="var(--gold-bright)"/>
+        </svg>
       </div>
-      <div class="hero-visual">
-        <div class="book" aria-hidden="true">
-          <div class="book-badge">בהמלצת<br>רבנים</div>
-          <div class="book-arch arch-top"><span></span><span></span><span></span></div>
-          <div class="book-mid">
-            <span class="leaf left"></span>
-            <span class="book-dot"></span>
-            <span class="leaf right"></span>
-          </div>
-          <p class="book-title">חוברת<br>כלה</p>
-          <div class="book-arch arch-bottom"><span></span><span></span><span></span></div>
-        </div>
+      <p class="eyebrow">מדריכת כלות מוסמכת · באישור רבנים</p>
+      <h1>את לא צריכה <em class="gold-text">לעשות את זה לבד</em></h1>
+      <p class="lede">
+        מתחתנת בקרוב, והראש מתפוצץ מרשימות, סידורים ותאריכים? התקופה הזו אמורה להיות המרגשת בחייך —
+        וזה בדיוק מה שחוברת כלה נועדה לתת לך: מפה ברורה, מרגיעה ומסודרת, מרגע סגירת השידוך ועד השבע ברכות.
+      </p>
+      <div class="cta-row">
+        <a class="btn wa-cta" data-msg="היי מושקי, אשמח לקבל פרטים נוספים ולהזמין את חוברת הכלה" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 0-8.6 15L2 22l5.2-1.4A10 10 0 1 0 12 2Z" stroke="currentColor" stroke-width="1.4" fill="none"/></svg>
+          להזמנת חוברת הכלה בוואטסאפ
+        </a>
+        <p class="price-note">מחיר השקה מיוחד — <b>18 ₪</b> בלבד</p>
       </div>
     </div>
     <div class="scroll-cue" aria-hidden="true"></div>
@@ -783,16 +737,31 @@
   <!-- FINAL CTA -->
   <section class="final">
     <div class="final-arch" aria-hidden="true"></div>
-    <div class="wrap reveal">
-      <p class="cap">מחיר השקה</p>
-      <p class="price"><span class="gold-text">18 ₪</span><small>בלבד</small></p>
-      <h2>חוברת כלה שלך, היום</h2>
-      <p class="body2">חוברת אחת קטנה שעושה סדר גדול בראש. בהמלצת רבנים, במחיר השקה מיוחד — לזמן מוגבל.</p>
-      <div class="cta-row">
-        <a class="btn wa-cta" data-msg="היי מושקי, אשמח לקבל פרטים נוספים ולהזמין את חוברת הכלה" target="_blank" rel="noopener">
-          <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 0-8.6 15L2 22l5.2-1.4A10 10 0 1 0 12 2Z" stroke="currentColor" stroke-width="1.4" fill="none"/></svg>
-          הזמנת החוברת בוואטסאפ
-        </a>
+    <div class="wrap reveal final-grid">
+      <div class="final-copy">
+        <p class="cap">מחיר השקה</p>
+        <p class="price"><span class="gold-text">18 ₪</span><small>בלבד</small></p>
+        <h2>חוברת כלה שלך, היום</h2>
+        <p class="body2">חוברת אחת קטנה שעושה סדר גדול בראש. בהמלצת רבנים, במחיר השקה מיוחד — לזמן מוגבל.</p>
+        <div class="cta-row">
+          <a class="btn wa-cta" data-msg="היי מושקי, אשמח לקבל פרטים נוספים ולהזמין את חוברת הכלה" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 0-8.6 15L2 22l5.2-1.4A10 10 0 1 0 12 2Z" stroke="currentColor" stroke-width="1.4" fill="none"/></svg>
+            הזמנת החוברת בוואטסאפ
+          </a>
+        </div>
+      </div>
+      <div class="final-visual">
+        <div class="book" aria-hidden="true">
+          <div class="book-badge">בהמלצת<br>רבנים</div>
+          <div class="book-arch arch-top"><span></span><span></span><span></span></div>
+          <div class="book-mid">
+            <span class="leaf left"></span>
+            <span class="book-dot"></span>
+            <span class="leaf right"></span>
+          </div>
+          <p class="book-title">חוברת<br>כלה</p>
+          <div class="book-arch arch-bottom"><span></span><span></span><span></span></div>
+        </div>
       </div>
     </div>
   </section>
